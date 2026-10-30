@@ -189,6 +189,22 @@ window.BACKLOG_ARCHIVE = [
   "note": "2026-10-30: User answers: 3 min rotation default (unchanged); short videos should loop until their slot ends (new ticket B16); approval off by default (unchanged); listener name stays optional free text (unchanged). Content rules are handled by the admin blocklist (B11); overlay size/position is set on the OBS browser source, which the overlay fills."
  },
  {
+  "id": "B13",
+  "order": 13,
+  "phase": "A4",
+  "size": "S",
+  "status": "Done",
+  "depends": [
+   "B07",
+   "B10"
+  ],
+  "read": [],
+  "title": "Deploy to Krystal",
+  "description": "Check Krystal's PHP version, set the docroot to public/ (or a subdomain pointing at it), put config.php and the data dir above the docroot with write permissions, HTTPS on. Write a short deploy section in CLAUDE.md (how files get uploaded, where config lives).",
+  "done_when": "User and admin views work on the live domain, the overlay works as an OBS browser source from the live URL, and data/ and config.php are not reachable over HTTP.",
+  "note": "2026-10-30: Cloned to ~/sites/tv.djbrainz.com/brainz-tv, loader index.php in public_html (user moved the docroot there), server config.php (600) with new overlay token, admin hash left for the user. Web PHP 8.3.36, HTTPS on, REMOTE_ADDR is the real IP behind Cloudflare. Verified: views/API 200, overlay 403 without token, config/data/src/.git unreachable, live submit + overlay played Rick Astley (error 150 was localhost-only). Test data cleared. Not tested inside OBS; admin untested live until the user sets a password."
+ },
+ {
   "id": "B15",
   "order": 15,
   "phase": "A2",

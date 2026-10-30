@@ -18,6 +18,12 @@ Lightweight single-page PHP app. No framework, no Composer, no build step.
 ## Run
 `php -S localhost:8000 -t public`
 
+## Deploy (Krystal, https://tv.djbrainz.com)
+- Server checkout: `~/sites/tv.djbrainz.com/brainz-tv` (SSH host `krystal`). Web root `~/sites/tv.djbrainz.com/public_html` holds only a loader `index.php` requiring `../brainz-tv/public/index.php`.
+- Deploy = push to GitHub, then `ssh krystal 'cd ~/sites/tv.djbrainz.com/brainz-tv && git pull -q'`.
+- Live `config.php` and `data/` live only on the server (gitignored). Admin password: `php tools/hash-password.php` there.
+- Cloudflare is in front; `REMOTE_ADDR` is still the real client IP.
+
 ## Work loop
 1. `node tools/backlog.mjs list` → pick the lowest-order `Ready` ticket whose depends are done.
 2. Read only that ticket (`node tools/backlog.mjs show ID`) and its `read` refs.
@@ -42,5 +48,5 @@ Lightweight single-page PHP app. No framework, no Composer, no build step.
 - Ticket `note`s: 1–3 sentences (what changed, how verified, limits). No narration.
 
 ## Status (max 3 lines; replace, never append)
-- Next: B13 deploy to Krystal, then B14 setup notes. Done: B02–B12, B15, B16.
+- Next: B14 OBS + Twitch setup notes. Live at https://tv.djbrainz.com (B13). Done: B02–B13, B15, B16.
 - Local setup: `cp config.example.php config.php`.

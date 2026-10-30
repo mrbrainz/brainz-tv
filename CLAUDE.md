@@ -4,6 +4,7 @@ Lightweight single-page PHP app. No framework, no Composer, no build step.
 
 ## Layout
 - `public/index.php` — the whole app (entry point, docroot).
+- `src/overlay.php` — OBS overlay page (`?view=overlay&token=...`).
 - `src/Queue.php` — queue state (`now`, `queue`) on top of Store.
 - `src/YouTube.php` — parse YouTube URL/ID, check via oEmbed.
 - `src/Store.php` — locked JSON file storage (no DB). Data lives in `data/` (gitignored).
@@ -38,5 +39,5 @@ Lightweight single-page PHP app. No framework, no Composer, no build step.
 - Ticket `note`s: 1–3 sentences (what changed, how verified, limits). No narration.
 
 ## Status (max 3 lines; replace, never append)
-- Next: B07 overlay, B09 admin login. Done: B02–B06.
+- Next: B08 overlay audio (needs user's choice), B09 admin login. Done: B02–B07.
 - Local setup: `cp config.example.php config.php`.

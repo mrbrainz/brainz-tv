@@ -95,5 +95,20 @@ window.BACKLOG_ARCHIVE = [
   "description": "Advance the queue lazily: whenever state is read (overlay poll, page load), if now-playing started more than the rotation interval ago (or the video's own length, if shorter and known), pop the next item and record the start time. Empty queue = nothing playing (or idle state). Deterministic from timestamps, so no cron or long-running process is needed on shared hosting.",
   "done_when": "With rotation set to e.g. 20s, items advance on schedule from overlay polling alone, and two simultaneous polls never skip an item.",
   "note": "2026-10-30: Queue::snapshot() advances lazily (re-checked under the exclusive lock), next video starts at poll time, finished ones go to history (newest first, cap 100); remaining() + ?api=queue `remaining`. tests/queue_test.php: fake-clock rotation, 10 racing processes, and a stale-read test that fails if the locked re-check is removed. Live: 5s rotation advanced 3 videos from polling alone. Uses rotation_seconds only: oEmbed gives no video length, so shorter videos are not cut early."
+ },
+ {
+  "id": "B07",
+  "order": 7,
+  "phase": "A2",
+  "size": "M",
+  "status": "Done",
+  "depends": [
+   "B06"
+  ],
+  "read": [],
+  "title": "OBS overlay view (browser source)",
+  "description": "?view=overlay: transparent background, sized for a browser source (e.g. 1280x720 or configurable), embeds the current video with the YouTube IFrame API, starts at the right offset from the server start time, and polls a JSON endpoint every few seconds to swap videos. Optional caption: title + 'requested by'. Keyed by a secret token in the URL so only the user's OBS can open it.",
+  "done_when": "Added as an OBS browser source, the overlay shows the queued videos in turn and switches without a manual refresh; with an empty queue it shows nothing (transparent).",
+  "note": "2026-10-30: src/overlay.php + ?api=overlay, both gated by hash_equals on overlay_token (empty token = disabled, 403). IFrame API player fills the source, joins at the server offset, polls every 3s, hides on early end, &caption=0 hides the caption. Browser test with 15s rotation: switched videos with no refresh, showed requester, went transparent when empty. Not yet tried inside OBS itself; YouTube's own title bar and viewer-preference CC can't be fully hidden. Muted for now (B08)."
  }
 ];

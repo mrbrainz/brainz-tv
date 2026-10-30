@@ -26,29 +26,16 @@ window.BACKLOG = {
   "B03",
   "B04",
   "B05",
-  "B06"
+  "B06",
+  "B07"
  ],
  "activities": [
-  {
-   "id": "B07",
-   "order": 7,
-   "phase": "A2",
-   "size": "M",
-   "status": "Ready",
-   "depends": [
-    "B06"
-   ],
-   "read": [],
-   "title": "OBS overlay view (browser source)",
-   "description": "?view=overlay: transparent background, sized for a browser source (e.g. 1280x720 or configurable), embeds the current video with the YouTube IFrame API, starts at the right offset from the server start time, and polls a JSON endpoint every few seconds to swap videos. Optional caption: title + 'requested by'. Keyed by a secret token in the URL so only the user's OBS can open it.",
-   "done_when": "Added as an OBS browser source, the overlay shows the queued videos in turn and switches without a manual refresh; with an empty queue it shows nothing (transparent)."
-  },
   {
    "id": "B08",
    "order": 8,
    "phase": "A2",
    "size": "XS",
-   "status": "Backlog",
+   "status": "Ready",
    "depends": [
     "B07"
    ],

@@ -62,8 +62,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $api === null && $view === 'user') 
     exit;
 }
 
+// The overlay page and its API need ?token= matching config overlay_token (unset = disabled).
+$overlayAllowed = fn(): bool => is_string($_GET['token'] ?? null) && $config['overlay_token'] !== ''
+    && hash_equals($config['overlay_token'], $_GET['token']);
+
 if ($api !== null) {
     $routes = [
+        'overlay' => function () use ($queue, $overlayAllowed) {
+            if (!$overlayAllowed()) {
+                http_response_code(403);
+                return ['error' => 'Bad overlay token'];
+            }
+            $state = $queue->snapshot();
+            $now = $state['now'];
+            return ['now' => $now === null ? null : [
+                'uid' => $now['uid'], 'id' => $now['id'], 'title' => $now['title'], 'name' => $now['name'],
+                'offset' => max(0, time() - $now['started_at']), 'remaining' => $queue->remaining($state),
+            ]];
+        },
         'queue' => function () use ($queue, $listener) {
             $state = $queue->snapshot();
             return Queue::forListener($state, $listener) + ['remaining' => $queue->remaining($state)];
@@ -82,6 +98,15 @@ $views = [
     'overlay' => 'brainz-tv overlay',
 ];
 $title = is_string($view) ? ($views[$view] ?? notFound()) : notFound();
+
+if ($view === 'overlay') {
+    if (!$overlayAllowed()) {
+        http_response_code(403);
+        exit($config['overlay_token'] === '' ? 'Overlay disabled: set overlay_token in config.php.' : 'Bad overlay token.');
+    }
+    require "$root/src/overlay.php";
+    exit;
+}
 
 $flash = json_decode(is_string($_COOKIE['flash'] ?? null) ? $_COOKIE['flash'] : '', true);
 if ($flash) setCookieValue('flash', '', -3600);

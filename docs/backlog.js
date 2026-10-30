@@ -32,7 +32,7 @@ window.BACKLOG = {
    "order": 5,
    "phase": "A1",
    "size": "S",
-   "status": "Backlog",
+   "status": "Ready",
    "depends": [
     "B03",
     "B04"
@@ -47,7 +47,7 @@ window.BACKLOG = {
    "order": 6,
    "phase": "A1",
    "size": "S",
-   "status": "Backlog",
+   "status": "Ready",
    "depends": [
     "B03"
    ],
@@ -89,7 +89,7 @@ window.BACKLOG = {
    "order": 9,
    "phase": "A3",
    "size": "S",
-   "status": "Backlog",
+   "status": "Ready",
    "depends": [
     "B02"
    ],

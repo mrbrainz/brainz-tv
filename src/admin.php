@@ -1,6 +1,7 @@
 <?php
 // Admin dashboard (logged in). Rendered client-side from ?api=admin-state; actions POST to ?api=admin-action.
-// Uses $h, $auth and $flash from index.php.
+// Uses $h, $auth, $flash and $config (quick_videos) from index.php.
+$quick = array_filter($config['quick_videos'] ?? [], fn($v) => is_array($v) && is_string($v['id'] ?? null) && $v['id'] !== '');
 ?>
   <style>
     .bar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1rem; }
@@ -15,6 +16,8 @@
     .settings label.check { grid-column: 1 / -1; display: flex; gap: .5rem; align-items: center; }
     .settings input[type=checkbox] { width: auto; }
     .settings button { grid-column: 1 / -1; }
+    .quick { display: flex; flex-wrap: wrap; gap: .5rem; }
+    .quick button { width: auto; padding: .5rem .8rem; font-size: .9rem; }
     .badge { font-size: .75rem; padding: .1rem .4rem; border-radius: 4px; background: var(--accent); color: #fff; margin-left: .4rem; }
     @media (max-width: 480px) { .item { grid-template-columns: 64px 1fr; } .item .pos { display: none; } .item img { width: 64px; } .acts { grid-column: 1 / -1; } }
   </style>
@@ -44,6 +47,15 @@
     <h2>Up next</h2>
     <div id="queue"></div>
     <div class="row" style="margin-top:.5rem"><button data-act="clear" class="danger">Clear queue</button></div>
+
+<?php if ($quick): ?>
+    <h2>Quick add</h2>
+    <div class="quick">
+      <?php foreach ($quick as $v): ?>
+        <button data-act="quick" data-video="<?= $h($v['id']) ?>"><?= $h(is_string($v['title'] ?? null) && $v['title'] !== '' ? $v['title'] : $v['id']) ?></button>
+      <?php endforeach; ?>
+    </div>
+<?php endif; ?>
 
     <h2>Add a video</h2>
     <form id="add" class="row">
@@ -139,6 +151,10 @@
       if (!b) return;
       const d = b.dataset;
       if (d.act === 'clear' && !confirm('Clear the whole queue?')) return;
+      if (d.act === 'quick') {
+        act({action: 'add', video: d.video});
+        return;
+      }
       if (d.act === 'block') {
         if (!confirm(`Block "${d.label}"? Listeners won't be able to request it.`)) return;
         act({action: 'block', kind: d.kind, key: d.key, label: d.label}).then(ok => ok && d.uid && act({action: 'remove', uid: d.uid}));

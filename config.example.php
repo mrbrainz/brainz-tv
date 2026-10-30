@@ -25,6 +25,11 @@ return [
     // Minutes before a video that just played can be requested again (0 = any time).
     'replay_cooldown_minutes' => 60,
 
+    // One-click "Quick add" buttons on the admin page: video ID (or YouTube link) and button label.
+    'quick_videos' => [
+        // ['id' => 'dQw4w9WgXcQ', 'title' => 'Rick Astley - Never Gonna Give You Up'],
+    ],
+
     // Writable folder for the JSON data files. Keep it outside public/.
     'data_dir' => __DIR__ . '/data',
 ];

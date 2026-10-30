@@ -38,6 +38,14 @@ To test: add a video on the listener page; it appears in the overlay within abou
 - With **Control audio via OBS** ticked, the video audio gets its own fader in the OBS mixer, so you can duck it, mute it, or monitor it without sending it to stream.
 
 ## During a show (admin page)
+- **Quick add:** one-click buttons for videos you list in `config.php` on the server (`~/sites/tv.djbrainz.com/brainz-tv/config.php`):
+  ```php
+  'quick_videos' => [
+      ['id' => 'dQw4w9WgXcQ', 'title' => 'Rickroll'],
+      ['id' => 'https://youtu.be/jNQXAC9IVRw', 'title' => 'Me at the zoo'],
+  ],
+  ```
+  `id` takes a video ID or any YouTube link; `title` is the button label. Reload the admin page after editing.
 - **Skip**, **Pause/Resume** (freezes the video and its timer), reorder (↑ ↓), remove (✕), **Clear queue**.
 - **Settings:** seconds per video (default 180), queue size, per-listener limit, time between a listener's requests, how soon a played video can be requested again, overlay volume, **Requests open**, **Approve requests first**.
 - **⛔** blocks a video; the Blocklist section blocks channels and unblocks anything, including videos YouTube refused to play.

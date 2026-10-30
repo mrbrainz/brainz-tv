@@ -288,5 +288,23 @@ window.BACKLOG_ARCHIVE = [
   "description": "User feedback: in a ~376x211 OBS source the standby URL was too small (14px floor). Size the message by viewport width with the URL on its own line at double size.",
   "done_when": "At 376x211 the URL is clearly readable on one line.",
   "note": "2026-10-30: Message 4.5vw, URL 9vw bold on its own line (34px at 376 wide, was 14px). Checked in a 376x211 frame with tv.djbrainz.com: fits on one line, box 275x68."
+ },
+ {
+  "id": "B19",
+  "order": 19,
+  "phase": "A3",
+  "size": "S",
+  "status": "Done",
+  "depends": [
+   "B10"
+  ],
+  "read": [
+   "src/admin.php",
+   "config.example.php"
+  ],
+  "title": "One-click quick-add videos in admin",
+  "description": "User request: define video IDs + titles in config.php (quick_videos) and push any of them to the queue with one click from the admin dashboard. Reuses the admin add action, so oEmbed still supplies the real title/thumbnail and unplayable videos are refused.",
+  "done_when": "Videos listed in config.php appear as buttons in admin; one click queues that video; an empty or missing list hides the section.",
+  "note": "2026-10-30: config quick_videos [{id, title}] rendered as Quick add buttons in src/admin.php (entries without id skipped, labels escaped); click reuses the admin add action. Browser: both buttons queued their video, empty list hides the section. Live config.php needs the key added by the user."
  }
 ];

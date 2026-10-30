@@ -374,5 +374,98 @@ window.BACKLOG_ARCHIVE = [
   "description": "Review 2026-10-30: Queue::add reads the submit cooldown in one submits update and records it in another after the state change, so parallel POSTs from one IP both pass.",
   "done_when": "The cooldown is reserved in the same locked update as the check (rolled back if the add fails); a test shows a second add inside the cooldown is refused.",
   "note": "2026-10-30: Queue::add now checks and reserves the submit cooldown in one locked update, and gives it back if the add is rejected. New RacingStore test in queue_test fails before the fix and passes after."
+ },
+ {
+  "id": "B24",
+  "order": 24,
+  "phase": "A4",
+  "size": "XS",
+  "status": "Done",
+  "depends": [],
+  "read": [
+   "src/Auth.php",
+   "tests/auth_test.php"
+  ],
+  "title": "Atomic login throttle",
+  "description": "Review 2026-10-30: Auth::login checks the lockout and counts failures in separate locked steps, so concurrent guesses during the free tries are not all counted.",
+  "done_when": "Each attempt is counted in the same update as the lockout check and cleared on success; auth_test passes.",
+  "note": "2026-10-30: Auth::login now counts each attempt as a failure in the same locked update as the lockout check; success still clears it. New nested-attempt test in auth_test caps 10 parallel guesses at 5 (got 10 before the fix)."
+ },
+ {
+  "id": "B25",
+  "order": 25,
+  "phase": "A4",
+  "size": "XS",
+  "status": "Done",
+  "depends": [],
+  "read": [
+   "public/index.php"
+  ],
+  "title": "Safe redirect after listener POST",
+  "description": "Review 2026-10-30: The listener POST redirects to strtok(REQUEST_URI, ?), so a path like //evil.com would give an open redirect if routed here.",
+  "done_when": "The redirect target is a fixed relative path; curl of //x-style paths never yields an off-site Location.",
+  "note": "2026-10-30: Listener POST redirect now strips leading slashes/backslashes and adds one, so it always stays on this site. curl against php -S (router mode) with //evil.com and /\\evil.com gives Location /evil.com; / and /index.php unchanged."
+ },
+ {
+  "id": "B26",
+  "order": 26,
+  "phase": "A4",
+  "size": "XS",
+  "status": "Done",
+  "depends": [],
+  "read": [
+   "public/index.php",
+   "config.example.php"
+  ],
+  "title": "Dedicated salt for IP hashing",
+  "description": "Review 2026-10-30: The IP HMAC key is overlay_token . admin_password_hash: empty if both unset, and changing the password resets all limits.",
+  "done_when": "IP keys use a dedicated secret (config ip_salt or one generated into data/) that is never empty.",
+  "note": "2026-10-30: IP keys now use config ip_salt, or a 64-hex salt generated once into data/secret.json. Local php -S: salt created on first request and unchanged on the next; 11th search in a minute still rate-limited. Existing per-IP limits reset once on deploy."
+ },
+ {
+  "id": "B27",
+  "order": 27,
+  "phase": "A4",
+  "size": "S",
+  "status": "Done",
+  "depends": [],
+  "read": [
+   "public/index.php"
+  ],
+  "title": "Tests for settings and admin gates",
+  "description": "Review 2026-10-30: saveSettings validation, CSRF/login gating of admin-* routes, the honeypot and forListener stripping of ip have no tests.",
+  "done_when": "A tests/*.php script covers these and passes.",
+  "note": "2026-10-30: New tests/http_test.php runs php -S on a throwaway config (BRAINZ_CONFIG, honoured only under cli-server) and checks admin 401/403 gates, CSRF, saveSettings validation, the honeypot and ?api=queue hiding by/ip. Passes; fails if forListener stops stripping ip."
+ },
+ {
+  "id": "B28",
+  "order": 28,
+  "phase": "A1",
+  "size": "XS",
+  "status": "Done",
+  "depends": [],
+  "read": [
+   "public/index.php"
+  ],
+  "title": "Ignore stale search responses",
+  "description": "Review 2026-10-30: Two quick searches can finish out of order, so older results overwrite newer ones.",
+  "done_when": "Only the latest search request renders its results.",
+  "note": "2026-10-30: Search keeps a request counter; a response (or error) only renders if it is still the latest search. Listener page script passes node --check; not exercised in a browser."
+ },
+ {
+  "id": "B29",
+  "order": 29,
+  "phase": "A4",
+  "size": "XS",
+  "status": "Done",
+  "depends": [],
+  "read": [
+   "public/index.php",
+   "src/Auth.php"
+  ],
+  "title": "Input and cookie tidy-ups",
+  "description": "Review 2026-10-30: Admin add name skips the control-char strip and block key/label have no length cap; a non-array flash cookie can throw; logout clears the session cookie without the flags it was set with.",
+  "done_when": "Admin name is sanitised like the listener one, key/label capped, flash checked with is_array, logout cookie flags match.",
+  "note": "2026-10-30: New cleanText() strips control chars, trims and caps listener + admin names and block kind/key/label (100/200); non-object flash cookies are ignored; logout clears the cookie with the session cookie flags. Covered by new http_test cases (all 6 test scripts pass)."
  }
 ];

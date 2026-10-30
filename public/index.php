@@ -3,7 +3,8 @@ declare(strict_types=1);
 
 // Single entry point: ?view=user|admin|overlay renders a page, ?api=... returns JSON.
 $root = dirname(__DIR__);
-$configPath = "$root/config.php";
+// BRAINZ_CONFIG lets tests/http_test.php point a local php -S at a throwaway config.
+$configPath = PHP_SAPI === 'cli-server' && getenv('BRAINZ_CONFIG') ? getenv('BRAINZ_CONFIG') : "$root/config.php";
 if (!is_file($configPath)) {
     http_response_code(500);
     exit('Missing config.php: copy config.example.php to config.php and fill it in.');
@@ -66,6 +67,12 @@ function saveSettings(Store $store, array $input): ?string
     return null;
 }
 
+// User-typed text: strings only, control/invisible characters removed, trimmed, capped.
+function cleanText(mixed $value, int $max): string
+{
+    return is_string($value) ? mb_substr(trim(preg_replace('/[\p{C}]+/u', '', $value) ?? ''), 0, $max) : '';
+}
+
 function setCookieValue(string $name, string $value, int $ttl): void
 {
     setcookie($name, $value, [
@@ -81,15 +88,21 @@ if (!is_string($listener) || !preg_match('/^[a-f0-9]{32}$/', $listener)) {
     setCookieValue('lid', $listener, 31536000);
 }
 // Keyed hash of the listener's IP for limits, so raw IPs are never stored.
-$ipKey = hash_hmac('sha256', $_SERVER['REMOTE_ADDR'] ?? '', $config['overlay_token'] . $config['admin_password_hash']);
+// The salt comes from config ip_salt, or is generated once into the 'secret' document.
+$ipSalt = (string) ($config['ip_salt'] ?? '');
+if ($ipSalt === '') {
+    $ipSalt = $store->read('secret')['ip_salt'] ?? $store->update('secret', function (array &$s) {
+        return $s['ip_salt'] ??= bin2hex(random_bytes(32));
+    });
+}
+$ipKey = hash_hmac('sha256', $_SERVER['REMOTE_ADDR'] ?? '', $ipSalt);
 
 $api = $_GET['api'] ?? null;
 $view = $_GET['view'] ?? 'user';
 $wantsJson = str_contains($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $api === null && $view === 'user') {
-    $name = is_string($_POST['name'] ?? null) ? trim(preg_replace('/[\p{C}]+/u', '', $_POST['name']) ?? '') : '';
-    $name = mb_substr($name, 0, 30);
+    $name = cleanText($_POST['name'] ?? null, 30);
     $input = is_string($_POST['video'] ?? null) ? $_POST['video'] : '';
     // Honeypot: the hidden "website" field is only ever filled in by bots. Pretend it worked.
     $isBot = ($_POST['website'] ?? '') !== '';
@@ -106,7 +119,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $api === null && $view === 'user') 
         exit(json_encode($result));
     }
     setCookieValue('flash', json_encode($result), 60);
-    header('Location: ' . strtok($_SERVER['REQUEST_URI'], '?'), true, 303);
+    // One leading slash only: browsers read //host or /\host as another site.
+    header('Location: /' . ltrim((string) strtok($_SERVER['REQUEST_URI'], '?'), '/\\'), true, 303);
     exit;
 }
 
@@ -193,12 +207,11 @@ if ($api !== null) {
             'move' => $queue->move($uid, is_int($in['by'] ?? null) ? $in['by'] : 0),
             'add' => (function () use ($queue, $in) {
                 $video = (new YouTube())->check(is_string($in['video'] ?? null) ? $in['video'] : '');
-                $name = is_string($in['name'] ?? null) ? mb_substr(trim($in['name']), 0, 30) : '';
+                $name = cleanText($in['name'] ?? null, 30);
                 return $video['ok'] ? $queue->add($video, $name, 'admin', true) : $video['error'];
             })(),
-            'block' => $queue->block((string) ($in['kind'] ?? ''), is_string($in['key'] ?? null) ? trim($in['key']) : '',
-                is_string($in['label'] ?? null) ? $in['label'] : ''),
-            'unblock' => $queue->unblock((string) ($in['kind'] ?? ''), is_string($in['key'] ?? null) ? $in['key'] : ''),
+            'block' => $queue->block(cleanText($in['kind'] ?? null, 20), cleanText($in['key'] ?? null, 100), cleanText($in['label'] ?? null, 200)),
+            'unblock' => $queue->unblock(cleanText($in['kind'] ?? null, 20), is_string($in['key'] ?? null) ? $in['key'] : ''),
             'settings' => saveSettings($store, is_array($in['settings'] ?? null) ? $in['settings'] : []),
             default => 'Unknown action.',
         }];
@@ -239,7 +252,8 @@ if ($view === 'admin') {
     header('Cache-Control: no-store');
 }
 $flash = json_decode(is_string($_COOKIE['flash'] ?? null) ? $_COOKIE['flash'] : '', true);
-if ($flash) setCookieValue('flash', '', -3600);
+if ($flash !== null) setCookieValue('flash', '', -3600);
+if (!is_array($flash) || !is_string($flash['message'] ?? null)) $flash = null;
 $savedName = is_string($_COOKIE['name'] ?? null) ? mb_substr($_COOKIE['name'], 0, 30) : '';
 ?><!doctype html>
 <html lang="en">
@@ -349,18 +363,20 @@ $savedName = is_string($_COOKIE['name'] ?? null) ? mb_substr($_COOKIE['name'], 0
     if (searchBox) {
       searchBox.hidden = false;
       const mmss = s => s ? Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') : '';
+      let latest = 0; // only the newest search may render, however the responses arrive
       $('search').addEventListener('submit', async e => {
         e.preventDefault();
-        const button = e.target.querySelector('button'), list = $('results');
+        const button = e.target.querySelector('button'), list = $('results'), mine = ++latest;
         button.disabled = true;
         list.innerHTML = '<li class="empty">Searching…</li>';
         try {
           const r = await (await fetch('?api=search&q=' + encodeURIComponent(e.target.q.value), {cache: 'no-store'})).json();
+          if (mine !== latest) return;
           list.innerHTML = r.error ? `<li class="msg err">${esc(r.error)}</li>`
             : r.results.length ? r.results.map(v => `<li class="item"><img src="${esc(v.thumbnail)}" alt="" loading="lazy"><div><div class="title">${esc(v.title)}</div><div class="meta">${esc(v.author)}${v.length ? ' · ' + mmss(v.length) : ''}</div></div><button data-pick="${esc(v.id)}">Add</button></li>`).join('')
             : '<li class="empty">No videos found.</li>';
         } catch {
-          list.innerHTML = '<li class="msg err">Search failed. Try again or paste a link.</li>';
+          if (mine === latest) list.innerHTML = '<li class="msg err">Search failed. Try again or paste a link.</li>';
         }
         button.disabled = false;
       });

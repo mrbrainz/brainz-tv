@@ -11,7 +11,7 @@ Lightweight single-page PHP app. No framework, no Composer, no build step.
 - `src/Search.php` — listener search via public Invidious instances (`invidious_instances`), cached + rate-limited.
 - `src/YouTube.php` — parse YouTube URL/ID, check via oEmbed.
 - `src/Store.php` — locked JSON file storage (no DB). Data lives in `data/` (gitignored).
-- `tests/*.php` — plain PHP test scripts: `php tests/store_test.php`, `php tests/queue_test.php`, `php tests/auth_test.php`, `php tests/search_test.php [--live]`, `php tests/youtube_test.php [--live]`.
+- `tests/*.php` — plain PHP test scripts: `php tests/store_test.php`, `php tests/queue_test.php`, `php tests/auth_test.php`, `php tests/search_test.php [--live]`, `php tests/youtube_test.php [--live]`, `php tests/http_test.php` (index.php routing via a throwaway php -S).
 - `docs/obs-setup.md` — OBS setup notes for the user.
 - `docs/backlog.js` — every to-do, as tickets. Board: `docs/backlog.html`.
 - `tools/backlog.mjs` — backlog CLI (Node, no deps).

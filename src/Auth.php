@@ -50,19 +50,21 @@ final class Auth
         }
         $key = hash('sha256', $this->ip);
         $now = ($this->clock)();
+        // Check the lockout and count this attempt as a failure in one locked step, so parallel
+        // guesses are all counted. A correct password clears the entry below.
         $wait = $this->store->update('logins', function (array &$logins) use ($key, $now) {
             $logins = array_filter($logins, fn($e) => $e['last'] > $now - 86400);
-            return max(0, ($logins[$key]['until'] ?? 0) - $now);
+            $wait = max(0, ($logins[$key]['until'] ?? 0) - $now);
+            if ($wait > 0) return $wait;
+            $fails = ($logins[$key]['fails'] ?? 0) + 1;
+            $until = $fails >= self::FREE_TRIES ? $now + min(self::MAX_LOCK, 60 * 2 ** ($fails - self::FREE_TRIES)) : 0;
+            $logins[$key] = ['fails' => $fails, 'until' => $until, 'last' => $now];
+            return 0;
         });
         if ($wait > 0) {
             return 'Too many failed attempts. Try again in ' . ceil($wait / 60) . ' minute(s).';
         }
         if (!password_verify($password, $this->hash)) {
-            $this->store->update('logins', function (array &$logins) use ($key, $now) {
-                $fails = ($logins[$key]['fails'] ?? 0) + 1;
-                $until = $fails >= self::FREE_TRIES ? $now + min(self::MAX_LOCK, 60 * 2 ** ($fails - self::FREE_TRIES)) : 0;
-                $logins[$key] = ['fails' => $fails, 'until' => $until, 'last' => $now];
-            });
             usleep(300000); // slows down scripted guessing
             return 'Wrong password.';
         }
@@ -78,7 +80,7 @@ final class Auth
     {
         $_SESSION = [];
         if (session_status() === PHP_SESSION_ACTIVE) {
-            setcookie(session_name(), '', ['expires' => 1, 'path' => '/']);
+            setcookie(session_name(), '', ['expires' => 1] + array_diff_key(session_get_cookie_params(), ['lifetime' => 0]));
             session_destroy();
         }
     }

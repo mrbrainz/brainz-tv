@@ -40,6 +40,27 @@ $auth->login('nope');
 $expect('old entries pruned', count($store->read('logins')), 1);
 $expect('csrf rejects without session', $auth->checkCsrf(''), false);
 
+// Parallel guesses: each attempt's first logins update starts the next attempt, so all 10 begin
+// before any password is checked. Only 5 may be tried; the rest must hit the lockout.
+final class NestingStore extends Store
+{
+    public int $left = 0;
+    public ?Closure $next = null;
+    public function update(string $name, callable $change, array $default = []): mixed
+    {
+        $result = parent::update($name, $change, $default);
+        if ($name === 'logins' && $this->left > 0) { $this->left--; ($this->next)(); }
+        return $result;
+    }
+}
+$racing = new NestingStore($dir);
+$guesser = new Auth($racing, $hash, '9.9.9.9', $clock);
+$tried = 0;
+$racing->next = function () use ($guesser, &$tried) { if ($guesser->login('nope') === 'Wrong password.') $tried++; };
+$racing->left = 9;
+($racing->next)();
+$expect('parallel guesses capped at 5', $tried, 5);
+
 array_map('unlink', glob("$dir/{*,.htaccess}", GLOB_BRACE));
 rmdir($dir);
 echo $failures ? "$failures failure(s)\n" : "ok: login + throttling\n";

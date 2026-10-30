@@ -23,7 +23,18 @@ Lightweight single-page PHP app. No framework, no Composer, no build step.
 - Ticket fields, in order: `id, order, phase, size, status, depends, read, title, description, done_when` (+ optional `note`).
   Status: Backlog, Ready, In progress, Blocked, Done, Won't fix. Size: XS <1h, S half day, M 1–2 days, L several days, XL split it.
 - Don't read `docs/archive/` unless you need a closed ticket's detail.
-- Keep this file short: rules and current state only.
+- Keep this file short: rules and current state only. History belongs in ticket `note`s and git log, not here.
 
-## Status
-- 2026-10-30: B02 routing/config and B03 storage done. Next: B04 YouTube validation. Local setup: cp config.example.php config.php.
+## Working lean with tokens
+- Read only what the ticket needs: its `read` refs and the files you'll change. No exploratory sweeps of the repo.
+- Read large files with offset/limit or grep for the part you need; never re-read a file you just wrote or edited.
+- Keep command output small: `| tail -n 5`, `grep -c`, `--quiet`/`-q` flags. Never dump whole logs, JSON blobs or HTML responses; print status codes or one matching line.
+- Batch independent tool calls in one message; chain related shell steps in one command.
+- Prefer small targeted edits over rewriting whole files.
+- No subagents unless the user asks.
+- Keep replies short: what changed, how it was verified, what's next. No restating the plan or the code.
+- Ticket `note`s: 1–3 sentences (what changed, how verified, limits). No narration.
+
+## Status (max 3 lines; replace, never append)
+- Next: B04 YouTube validation. Done so far: B02 routing/config, B03 storage.
+- Local setup: `cp config.example.php config.php`.

@@ -24,24 +24,10 @@ window.BACKLOG = {
   "B01",
   "B02",
   "B03",
-  "B04"
+  "B04",
+  "B05"
  ],
  "activities": [
-  {
-   "id": "B05",
-   "order": 5,
-   "phase": "A1",
-   "size": "S",
-   "status": "Ready",
-   "depends": [
-    "B03",
-    "B04"
-   ],
-   "read": [],
-   "title": "User view: submit form and visible queue",
-   "description": "Mobile-friendly page: optional display name + URL/ID field, submit via POST (works without JS, enhanced with fetch). Show now-playing, the upcoming queue with titles/thumbnails/who added them, and the listener's position. Escape all user text.",
-   "done_when": "A listener on a phone can submit a video and see it appear in the queue with its title; errors from B04 show inline."
-  },
   {
    "id": "B06",
    "order": 6,

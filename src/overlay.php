@@ -44,11 +44,16 @@ $site = preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? ''));
 
     window.onYouTubeIframeAPIReady = () => {
       player = new YT.Player('player', {
-        playerVars: {autoplay: 1, controls: 0, disablekb: 1, fs: 0, iv_load_policy: 3, rel: 0, playsinline: 1, mute: 1, origin: location.origin},
+        playerVars: {autoplay: 1, controls: 0, disablekb: 1, fs: 0, iv_load_policy: 3, cc_load_policy: 0, rel: 0, playsinline: 1, mute: 1, origin: location.origin},
         events: {
           onReady: () => { ready = true; poll(); },
           // Video finished before its rotation slot ended: loop it until the server rotates.
-          onStateChange: e => { if (e.data === YT.PlayerState.ENDED && !paused) { player.seekTo(0, true); player.playVideo(); } },
+          onStateChange: e => {
+            if (e.data === YT.PlayerState.PLAYING) noCaptions();
+            if (e.data === YT.PlayerState.ENDED && !paused) { player.seekTo(0, true); player.playVideo(); }
+          },
+          // The captions module loads after playback starts; turn it off again whenever it appears.
+          onApiChange: noCaptions,
           // Unplayable here (e.g. 150: owner blocks embedding, which oEmbed doesn't always reveal):
           // stay transparent and tell the server, which skips to the next video and flags this one.
           onError: () => {
@@ -58,6 +63,12 @@ $site = preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? ''));
         },
       });
     };
+
+    // cc_load_policy alone doesn't stop captions a video or viewer has on by default, so unload the module.
+    function noCaptions() {
+      for (const m of ['captions', 'cc']) try { player.unloadModule(m); } catch {}
+      try { player.setOption('captions', 'track', {}); } catch {}
+    }
 
     function show(now, paused) {
       current = now ? now.uid : null;

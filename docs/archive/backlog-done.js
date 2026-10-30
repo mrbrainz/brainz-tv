@@ -324,5 +324,22 @@ window.BACKLOG_ARCHIVE = [
   "description": "User request: a simple search so listeners don't need a YouTube link. User chose public Invidious instances (no API key). Server-side proxy ?api=search tries configured instances in order (invidious_instances), caches results 1h, rate-limits per hashed IP, and returns id/title/author/length with YouTube thumbnails. Picking a result submits the ID through the normal add checks. JS-only; the link field stays as the fallback.",
   "done_when": "A listener can type a search, see results with thumbnails, and add one with a click; if every instance fails they get a clear message to paste a link instead; works on tv.djbrainz.com.",
   "note": "2026-10-30: src/Search.php + ?api=search: tries invidious_instances in order (default yt.chocolatemoo53.com, invidious.materialio.us), drops non-video/live/upcoming, 12 results with YouTube thumbnails, 1h cache (max 200), 10 searches/min per hashed IP. Listener UI (JS only) adds a pick via the normal submit. tests/search_test.php (+ --live on both instances); browser at 375px: search then Add queued the video. Public instances are volunteer-run and may stop working."
+ },
+ {
+  "id": "B21",
+  "order": 21,
+  "phase": "A2",
+  "size": "XS",
+  "status": "Done",
+  "depends": [
+   "B07"
+  ],
+  "read": [
+   "src/overlay.php"
+  ],
+  "title": "Never show closed captions in the overlay",
+  "description": "User request: closed captions must not show on stream. cc_load_policy alone doesn't override a video's or viewer's default captions.",
+  "done_when": "A video that showed captions before shows none in the overlay, even if captions are switched on.",
+  "note": "2026-10-30: cc_load_policy 0, plus unloadModule('captions'/'cc') and an empty captions track on PLAYING and onApiChange. Browser: Me at the zoo (showed captions in B07) shows none across the video, and forcing English captions on via the console is turned straight back off. Captions burned into the video picture itself can't be removed."
  }
 ];

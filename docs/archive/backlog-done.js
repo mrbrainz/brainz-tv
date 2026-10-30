@@ -125,5 +125,20 @@ window.BACKLOG_ARCHIVE = [
   "description": "Videos playing over a live radio mix: muted by default, with an admin setting for volume/unmute. Confirm with the user which they want. Note OBS browser sources can route audio via 'Control audio via OBS'; document that option.",
   "done_when": "The user has chosen the default, the setting works in OBS, and the OBS setup notes say how audio is handled.",
   "note": "2026-10-30: User chose muted by default. config overlay_volume (0-100, default 0) sent in ?api=overlay and applied every poll; admin override is in B10. Browser: muted at 0, unmuted at 40 within one poll without reload. docs/obs-setup.md covers audio (Control audio via OBS). Not yet tried inside OBS."
+ },
+ {
+  "id": "B09",
+  "order": 9,
+  "phase": "A3",
+  "size": "S",
+  "status": "Done",
+  "depends": [
+   "B02"
+  ],
+  "read": [],
+  "title": "Admin login",
+  "description": "?view=admin behind a password checked with password_verify against the hash in config.php; PHP session with regenerated ID, secure/httponly cookies, CSRF token on every admin POST, logout. Brute-force slow-down (delay/lockout per IP stored in the data dir).",
+  "done_when": "Admin pages and admin API calls reject unauthenticated or CSRF-less requests; a helper command prints a hash for a new password.",
+  "note": "2026-10-30: src/Auth.php (password_verify, btv_admin session only on admin routes, HttpOnly+SameSite=Strict, regenerate on login, CSRF), per-hashed-IP lockout after 5 fails (1,2,4.. min, max 1h). admin-* API guard (401/403) with admin-state route; tools/hash-password.php. tests/auth_test.php + curl run: anon 401, CSRF-less 403, session rotated, logout kills session, lockout. Uses REMOTE_ADDR: if Krystal sits behind a proxy/CDN all users may share one IP."
  }
 ];

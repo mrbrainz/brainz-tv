@@ -28,29 +28,16 @@ window.BACKLOG = {
   "B05",
   "B06",
   "B07",
-  "B08"
+  "B08",
+  "B09"
  ],
  "activities": [
-  {
-   "id": "B09",
-   "order": 9,
-   "phase": "A3",
-   "size": "S",
-   "status": "Ready",
-   "depends": [
-    "B02"
-   ],
-   "read": [],
-   "title": "Admin login",
-   "description": "?view=admin behind a password checked with password_verify against the hash in config.php; PHP session with regenerated ID, secure/httponly cookies, CSRF token on every admin POST, logout. Brute-force slow-down (delay/lockout per IP stored in the data dir).",
-   "done_when": "Admin pages and admin API calls reject unauthenticated or CSRF-less requests; a helper command prints a hash for a new password."
-  },
   {
    "id": "B10",
    "order": 10,
    "phase": "A3",
    "size": "M",
-   "status": "Backlog",
+   "status": "Ready",
    "depends": [
     "B05",
     "B06",
@@ -66,7 +53,7 @@ window.BACKLOG = {
    "order": 11,
    "phase": "A4",
    "size": "S",
-   "status": "Backlog",
+   "status": "Ready",
    "depends": [
     "B05"
    ],

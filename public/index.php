@@ -13,8 +13,10 @@ $config = require $configPath;
 require "$root/src/Store.php";
 require "$root/src/Queue.php";
 require "$root/src/YouTube.php";
+require "$root/src/Auth.php";
 $store = new Store($config['data_dir']);
 $queue = new Queue($store, $config);
+$auth = new Auth($store, $config['admin_password_hash'], $_SERVER['REMOTE_ADDR'] ?? '');
 
 $h = fn(?string $s): string => htmlspecialchars($s ?? '', ENT_QUOTES);
 
@@ -62,6 +64,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $api === null && $view === 'user') 
     exit;
 }
 
+// Admin form posts: login, logout (later admin actions add cases here). Redirects back with a flash message.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $api === null && $view === 'admin') {
+    $auth->startSession();
+    $action = $_POST['action'] ?? '';
+    if ($action === 'login') {
+        $error = $auth->login(is_string($_POST['password'] ?? null) ? $_POST['password'] : '');
+    } elseif (!$auth->loggedIn() || !$auth->checkCsrf($_POST['csrf'] ?? null)) {
+        http_response_code(403);
+        exit('Session expired. Reload the admin page and try again.');
+    } elseif ($action === 'logout') {
+        $auth->logout();
+        $error = null;
+    } else {
+        $error = 'Unknown action.';
+    }
+    if ($error !== null) setCookieValue('flash', json_encode(['ok' => false, 'message' => $error]), 60);
+    header('Location: ?view=admin', true, 303);
+    exit;
+}
+
 // The overlay page and its API need ?token= matching config overlay_token (unset = disabled).
 $overlayAllowed = fn(): bool => is_string($_GET['token'] ?? null) && $config['overlay_token'] !== ''
     && hash_equals($config['overlay_token'], $_GET['token']);
@@ -85,6 +107,16 @@ if ($api !== null) {
             return Queue::forListener($state, $listener) + ['remaining' => $queue->remaining($state)];
         },
     ];
+    // admin-* routes need a logged-in session, and a X-CSRF-Token header when they change things.
+    $routes['admin-state'] = fn() => $queue->snapshot() + ['remaining' => $queue->remaining($queue->snapshot())];
+    if (is_string($api) && str_starts_with($api, 'admin-')) {
+        $auth->startSession();
+        if (!$auth->loggedIn() || ($_SERVER['REQUEST_METHOD'] !== 'GET' && !$auth->checkCsrf($_SERVER['HTTP_X_CSRF_TOKEN'] ?? null))) {
+            http_response_code($auth->loggedIn() ? 403 : 401);
+            header('Content-Type: application/json');
+            exit(json_encode(['error' => $auth->loggedIn() ? 'Bad CSRF token' : 'Not logged in']));
+        }
+    }
     $handler = is_string($api) ? ($routes[$api] ?? notFound()) : notFound();
     header('Content-Type: application/json');
     header('Cache-Control: no-store');
@@ -108,6 +140,10 @@ if ($view === 'overlay') {
     exit;
 }
 
+if ($view === 'admin') {
+    $auth->startSession();
+    header('Cache-Control: no-store');
+}
 $flash = json_decode(is_string($_COOKIE['flash'] ?? null) ? $_COOKIE['flash'] : '', true);
 if ($flash) setCookieValue('flash', '', -3600);
 $savedName = is_string($_COOKIE['name'] ?? null) ? mb_substr($_COOKIE['name'], 0, 30) : '';
@@ -198,10 +234,30 @@ $savedName = is_string($_COOKIE['name'] ?? null) ? mb_substr($_COOKIE['name'], 0
     setInterval(() => document.hidden || refresh(), 10000);
   })();
   </script>
+<?php elseif (!$auth->loggedIn()): ?>
+  <main>
+    <h1>brainz-tv admin</h1>
+    <?php if (!$auth->enabled()): ?>
+      <p class="msg err">Admin is disabled: set admin_password_hash in config.php (see <code>php tools/hash-password.php</code>).</p>
+    <?php else: ?>
+      <form method="post">
+        <input type="hidden" name="action" value="login">
+        <input type="password" name="password" required placeholder="Password" autocomplete="current-password" autofocus>
+        <button>Log in</button>
+      </form>
+    <?php endif; ?>
+    <p class="msg err" role="status"><?= $h($flash['message'] ?? '') ?></p>
+  </main>
 <?php else: ?>
   <main>
-    <h1><?= $h($title) ?></h1>
-    <p><?= $h($view) ?> view placeholder.</p>
+    <h1>brainz-tv admin</h1>
+    <p>Logged in.</p>
+    <form method="post">
+      <input type="hidden" name="action" value="logout">
+      <input type="hidden" name="csrf" value="<?= $h($auth->csrfToken()) ?>">
+      <button>Log out</button>
+    </form>
+    <p class="msg err" role="status"><?= $h($flash['message'] ?? '') ?></p>
   </main>
 <?php endif; ?>
 </body>

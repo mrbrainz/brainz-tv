@@ -1,7 +1,7 @@
 <?php
 // Copy to config.php (same folder, outside public/) and fill in. config.php is gitignored.
 return [
-    // Admin password hash. Generate with: php -r 'echo password_hash("your-password", PASSWORD_DEFAULT), "\n";'
+    // Admin password hash. Generate with: php tools/hash-password.php
     'admin_password_hash' => '',
 
     // Secret token for the OBS overlay URL (?view=overlay&token=...). Generate with: php -r 'echo bin2hex(random_bytes(16)), "\n";'

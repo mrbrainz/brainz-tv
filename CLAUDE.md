@@ -5,10 +5,11 @@ Lightweight single-page PHP app. No framework, no Composer, no build step.
 ## Layout
 - `public/index.php` — the whole app (entry point, docroot).
 - `src/overlay.php` — OBS overlay page (`?view=overlay&token=...`).
+- `src/Auth.php` — admin login, CSRF, login throttling. Hash: `php tools/hash-password.php`.
 - `src/Queue.php` — queue state (`now`, `queue`) on top of Store.
 - `src/YouTube.php` — parse YouTube URL/ID, check via oEmbed.
 - `src/Store.php` — locked JSON file storage (no DB). Data lives in `data/` (gitignored).
-- `tests/*.php` — plain PHP test scripts: `php tests/store_test.php`, `php tests/queue_test.php`, `php tests/youtube_test.php [--live]`.
+- `tests/*.php` — plain PHP test scripts: `php tests/store_test.php`, `php tests/queue_test.php`, `php tests/auth_test.php`, `php tests/youtube_test.php [--live]`.
 - `docs/obs-setup.md` — OBS setup notes for the user.
 - `docs/backlog.js` — every to-do, as tickets. Board: `docs/backlog.html`.
 - `tools/backlog.mjs` — backlog CLI (Node, no deps).
@@ -40,5 +41,5 @@ Lightweight single-page PHP app. No framework, no Composer, no build step.
 - Ticket `note`s: 1–3 sentences (what changed, how verified, limits). No narration.
 
 ## Status (max 3 lines; replace, never append)
-- Next: B09 admin login. Done: B02–B08.
+- Next: B10 admin controls, B11 abuse limits. Done: B02–B09.
 - Local setup: `cp config.example.php config.php`.

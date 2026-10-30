@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>brainz-tv backlog</title>
+<style>
+  :root { color-scheme: light dark; --bg: #f6f6f4; --card: #fff; --fg: #1a1a1a; --muted: #777; --line: #ddd; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #151515; --card: #222; --fg: #eee; --muted: #999; --line: #333; } }
+  body { margin: 0; padding: 16px; font: 14px/1.4 system-ui, sans-serif; background: var(--bg); color: var(--fg); }
+  header { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+  h1 { font-size: 18px; margin: 0 0 12px; }
+  .board { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .col h2 { font-size: 13px; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; margin-bottom: 8px; }
+  .card summary { cursor: pointer; }
+  .meta { color: var(--muted); font-size: 12px; }
+  .card p { margin: 6px 0 0; }
+</style>
+</head>
+<body>
+<header><h1 id="title"></h1><label><input type="checkbox" id="closed"> Show closed</label></header>
+<div class="board" id="board"></div>
+<script src="backlog.js"></script>
+<script>
+const COLUMNS = ['Backlog', 'Ready', 'In progress', 'Blocked', 'Done', "Won't fix"];
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const data = window.BACKLOG;
+let archive = null;
+document.getElementById('title').textContent = data.title;
+function render() {
+  const items = [...data.activities, ...(document.getElementById('closed').checked ? archive || [] : [])];
+  document.getElementById('board').innerHTML = COLUMNS.map(col => {
+    const cards = items.filter(i => i.status === col).sort((a, b) => a.order - b.order);
+    if (!cards.length && (col === 'Done' || col === "Won't fix")) return '';
+    return `<div class="col"><h2>${esc(col)} (${cards.length})</h2>` + cards.map(i => `
+      <details class="card"><summary><b>${esc(i.id)}</b> ${esc(i.title)}</summary>
+        <div class="meta">${esc(i.phase)} · ${esc(i.size)}${i.depends.length ? ' · needs ' + esc(i.depends.join(', ')) : ''}</div>
+        <p>${esc(i.description)}</p>
+        <p><b>Done when:</b> ${esc(i.done_when)}</p>
+        ${i.note ? `<p><b>Note:</b> ${esc(i.note)}</p>` : ''}
+      </details>`).join('') + '</div>';
+  }).join('');
+}
+document.getElementById('closed').addEventListener('change', () => {
+  if (archive) return render();
+  const s = document.createElement('script');
+  s.src = 'archive/backlog-done.js';
+  s.onload = s.onerror = () => { archive = window.BACKLOG_ARCHIVE || []; render(); };
+  document.head.append(s);
+});
+render();
+</script>
+</body>
+</html>

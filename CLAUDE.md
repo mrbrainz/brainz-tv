@@ -7,7 +7,7 @@ Lightweight single-page PHP app. No framework, no Composer, no build step.
 - `src/Queue.php` — queue state (`now`, `queue`) on top of Store.
 - `src/YouTube.php` — parse YouTube URL/ID, check via oEmbed.
 - `src/Store.php` — locked JSON file storage (no DB). Data lives in `data/` (gitignored).
-- `tests/*.php` — plain PHP test scripts: `php tests/store_test.php`, `php tests/youtube_test.php [--live]`.
+- `tests/*.php` — plain PHP test scripts: `php tests/store_test.php`, `php tests/queue_test.php`, `php tests/youtube_test.php [--live]`.
 - `docs/backlog.js` — every to-do, as tickets. Board: `docs/backlog.html`.
 - `tools/backlog.mjs` — backlog CLI (Node, no deps).
 
@@ -38,5 +38,5 @@ Lightweight single-page PHP app. No framework, no Composer, no build step.
 - Ticket `note`s: 1–3 sentences (what changed, how verified, limits). No narration.
 
 ## Status (max 3 lines; replace, never append)
-- Next: B06 rotation, B09 admin login (Ready). Done: B02–B05.
+- Next: B07 overlay, B09 admin login. Done: B02–B06.
 - Local setup: `cp config.example.php config.php`.

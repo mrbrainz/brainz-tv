@@ -80,5 +80,20 @@ window.BACKLOG_ARCHIVE = [
   "description": "Mobile-friendly page: optional display name + URL/ID field, submit via POST (works without JS, enhanced with fetch). Show now-playing, the upcoming queue with titles/thumbnails/who added them, and the listener's position. Escape all user text.",
   "done_when": "A listener on a phone can submit a video and see it appear in the queue with its title; errors from B04 show inline.",
   "note": "2026-10-30: src/Queue.php (state {now, queue}, add with max_queue_length, forListener hides `by`) + user view in index.php: POST-redirect-GET with flash cookie, fetch enhancement, ?api=queue polled every 10s, anonymous lid cookie marks your entries. Verified with curl (JSON + no-JS, errors, queue full, HTML escaping, no `by` leak) and in the browser at 375px (JS submit). per_user_limit left to B11."
+ },
+ {
+  "id": "B06",
+  "order": 6,
+  "phase": "A1",
+  "size": "S",
+  "status": "Done",
+  "depends": [
+   "B03"
+  ],
+  "read": [],
+  "title": "Rotation logic without cron",
+  "description": "Advance the queue lazily: whenever state is read (overlay poll, page load), if now-playing started more than the rotation interval ago (or the video's own length, if shorter and known), pop the next item and record the start time. Empty queue = nothing playing (or idle state). Deterministic from timestamps, so no cron or long-running process is needed on shared hosting.",
+  "done_when": "With rotation set to e.g. 20s, items advance on schedule from overlay polling alone, and two simultaneous polls never skip an item.",
+  "note": "2026-10-30: Queue::snapshot() advances lazily (re-checked under the exclusive lock), next video starts at poll time, finished ones go to history (newest first, cap 100); remaining() + ?api=queue `remaining`. tests/queue_test.php: fake-clock rotation, 10 racing processes, and a stale-read test that fails if the locked re-check is removed. Live: 5s rotation advanced 3 videos from polling alone. Uses rotation_seconds only: oEmbed gives no video length, so shorter videos are not cut early."
  }
 ];

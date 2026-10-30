@@ -4,7 +4,7 @@ declare(strict_types=1);
 // JSON file storage, no database. Each document is <dir>/<name>.json, guarded by
 // <dir>/<name>.lock. Writes go to a temp file and are renamed into place, so readers
 // never see half-written JSON even if PHP dies mid-write.
-final class Store
+class Store
 {
     public function __construct(private string $dir)
     {

@@ -64,7 +64,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $api === null && $view === 'user') 
 
 if ($api !== null) {
     $routes = [
-        'queue' => fn() => Queue::forListener($queue->snapshot(), $listener),
+        'queue' => function () use ($queue, $listener) {
+            $state = $queue->snapshot();
+            return Queue::forListener($state, $listener) + ['remaining' => $queue->remaining($state)];
+        },
     ];
     $handler = is_string($api) ? ($routes[$api] ?? notFound()) : notFound();
     header('Content-Type: application/json');

@@ -25,29 +25,16 @@ window.BACKLOG = {
   "B02",
   "B03",
   "B04",
-  "B05"
+  "B05",
+  "B06"
  ],
  "activities": [
-  {
-   "id": "B06",
-   "order": 6,
-   "phase": "A1",
-   "size": "S",
-   "status": "Ready",
-   "depends": [
-    "B03"
-   ],
-   "read": [],
-   "title": "Rotation logic without cron",
-   "description": "Advance the queue lazily: whenever state is read (overlay poll, page load), if now-playing started more than the rotation interval ago (or the video's own length, if shorter and known), pop the next item and record the start time. Empty queue = nothing playing (or idle state). Deterministic from timestamps, so no cron or long-running process is needed on shared hosting.",
-   "done_when": "With rotation set to e.g. 20s, items advance on schedule from overlay polling alone, and two simultaneous polls never skip an item."
-  },
   {
    "id": "B07",
    "order": 7,
    "phase": "A2",
    "size": "M",
-   "status": "Backlog",
+   "status": "Ready",
    "depends": [
     "B06"
    ],

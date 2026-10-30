@@ -341,5 +341,22 @@ window.BACKLOG_ARCHIVE = [
   "description": "User request: closed captions must not show on stream. cc_load_policy alone doesn't override a video's or viewer's default captions.",
   "done_when": "A video that showed captions before shows none in the overlay, even if captions are switched on.",
   "note": "2026-10-30: cc_load_policy 0, plus unloadModule('captions'/'cc') and an empty captions track on PLAYING and onApiChange. Browser: Me at the zoo (showed captions in B07) shows none across the video, and forcing English captions on via the console is turned straight back off. Captions burned into the video picture itself can't be removed."
+ },
+ {
+  "id": "B22",
+  "order": 22,
+  "phase": "A1",
+  "size": "XS",
+  "status": "Done",
+  "depends": [
+   "B20"
+  ],
+  "read": [
+   "public/index.php"
+  ],
+  "title": "Name field first on the listener page",
+  "description": "User request: move 'Your name' above the search box so it's the first thing listeners fill in.",
+  "done_when": "The name field is the first input and is still sent with both search picks and pasted links, with or without JS.",
+  "note": "2026-10-30: Name input moved above search, outside the form but linked with form=\"submit\". curl no-JS POST kept the name; browser at 375px: search pick credited 'added by Searcher'."
  }
 ];

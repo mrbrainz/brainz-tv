@@ -280,6 +280,8 @@ $savedName = is_string($_COOKIE['name'] ?? null) ? mb_substr($_COOKIE['name'], 0
     <h1>brainz-tv</h1>
     <?php if (!$config['submissions_open']): ?><p class="msg err">Requests are closed right now.</p><?php endif; ?>
     <?php if ($config['submissions_open']): ?>
+    <!-- Outside the form so it comes first; form="submit" still sends it with the request. -->
+    <input name="name" form="submit" maxlength="30" placeholder="Your name (optional)" value="<?= $h($savedName) ?>" autocomplete="nickname" style="margin-bottom:.5rem">
     <section id="search-box" hidden>
       <form id="search" class="row" role="search">
         <input name="q" type="search" required minlength="2" maxlength="100" placeholder="Search for a video" autocomplete="off" style="flex:1 1 12rem">
@@ -290,7 +292,6 @@ $savedName = is_string($_COOKIE['name'] ?? null) ? mb_substr($_COOKIE['name'], 0
     </section>
     <?php endif; ?>
     <form method="post" id="submit"<?= $config['submissions_open'] ? '' : ' hidden' ?>>
-      <input name="name" maxlength="30" placeholder="Your name (optional)" value="<?= $h($savedName) ?>" autocomplete="nickname">
       <input name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px">
       <input name="video" required placeholder="YouTube link or video ID" autocomplete="off">
       <button>Add to queue</button>

@@ -41,7 +41,8 @@ window.BACKLOG = {
   "B18",
   "B19",
   "B20",
-  "B21"
+  "B21",
+  "B22"
  ],
  "activities": []
 };

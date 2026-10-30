@@ -34,23 +34,9 @@ window.BACKLOG = {
   "B11",
   "B12",
   "B13",
+  "B14",
   "B15",
   "B16"
  ],
- "activities": [
-  {
-   "id": "B14",
-   "order": 14,
-   "phase": "A4",
-   "size": "XS",
-   "status": "Ready",
-   "depends": [
-    "B13"
-   ],
-   "read": [],
-   "title": "OBS + Twitch setup notes",
-   "description": "Short guide: adding the overlay as a browser source (URL with token, size, 'Shutdown source when not visible' off, refresh on scene activation), plus a chat command/panel text pointing listeners at the user view.",
-   "done_when": "The user can set up the overlay from the notes alone."
-  }
- ]
+ "activities": []
 };

@@ -48,5 +48,5 @@ Lightweight single-page PHP app. No framework, no Composer, no build step.
 - Ticket `note`s: 1–3 sentences (what changed, how verified, limits). No narration.
 
 ## Status (max 3 lines; replace, never append)
-- Next: B14 OBS + Twitch setup notes. Live at https://tv.djbrainz.com (B13). Done: B02–B13, B15, B16.
+- Live at https://tv.djbrainz.com. All tickets done (B01–B16); new work = new ticket.
 - Local setup: `cp config.example.php config.php`.

@@ -205,6 +205,21 @@ window.BACKLOG_ARCHIVE = [
   "note": "2026-10-30: Cloned to ~/sites/tv.djbrainz.com/brainz-tv, loader index.php in public_html (user moved the docroot there), server config.php (600) with new overlay token, admin hash left for the user. Web PHP 8.3.36, HTTPS on, REMOTE_ADDR is the real IP behind Cloudflare. Verified: views/API 200, overlay 403 without token, config/data/src/.git unreachable, live submit + overlay played Rick Astley (error 150 was localhost-only). Test data cleared. Not tested inside OBS; admin untested live until the user sets a password."
  },
  {
+  "id": "B14",
+  "order": 14,
+  "phase": "A4",
+  "size": "XS",
+  "status": "Done",
+  "depends": [
+   "B13"
+  ],
+  "read": [],
+  "title": "OBS + Twitch setup notes",
+  "description": "Short guide: adding the overlay as a browser source (URL with token, size, 'Shutdown source when not visible' off, refresh on scene activation), plus a chat command/panel text pointing listeners at the user view.",
+  "done_when": "The user can set up the overlay from the notes alone.",
+  "note": "2026-10-30: docs/obs-setup.md rewritten: URLs, admin password + token commands, OBS browser source settings, audio, admin controls, Twitch chat command and panel text. Not verified in OBS by the agent."
+ },
+ {
   "id": "B15",
   "order": 15,
   "phase": "A2",

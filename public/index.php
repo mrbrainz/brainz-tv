@@ -68,14 +68,14 @@ $overlayAllowed = fn(): bool => is_string($_GET['token'] ?? null) && $config['ov
 
 if ($api !== null) {
     $routes = [
-        'overlay' => function () use ($queue, $overlayAllowed) {
+        'overlay' => function () use ($queue, $overlayAllowed, $config) {
             if (!$overlayAllowed()) {
                 http_response_code(403);
                 return ['error' => 'Bad overlay token'];
             }
             $state = $queue->snapshot();
             $now = $state['now'];
-            return ['now' => $now === null ? null : [
+            return ['volume' => max(0, min(100, (int) $config['overlay_volume'])), 'now' => $now === null ? null : [
                 'uid' => $now['uid'], 'id' => $now['id'], 'title' => $now['title'], 'name' => $now['name'],
                 'offset' => max(0, time() - $now['started_at']), 'remaining' => $queue->remaining($state),
             ]];

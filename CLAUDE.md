@@ -9,6 +9,7 @@ Lightweight single-page PHP app. No framework, no Composer, no build step.
 - `src/YouTube.php` — parse YouTube URL/ID, check via oEmbed.
 - `src/Store.php` — locked JSON file storage (no DB). Data lives in `data/` (gitignored).
 - `tests/*.php` — plain PHP test scripts: `php tests/store_test.php`, `php tests/queue_test.php`, `php tests/youtube_test.php [--live]`.
+- `docs/obs-setup.md` — OBS setup notes for the user.
 - `docs/backlog.js` — every to-do, as tickets. Board: `docs/backlog.html`.
 - `tools/backlog.mjs` — backlog CLI (Node, no deps).
 
@@ -39,5 +40,5 @@ Lightweight single-page PHP app. No framework, no Composer, no build step.
 - Ticket `note`s: 1–3 sentences (what changed, how verified, limits). No narration.
 
 ## Status (max 3 lines; replace, never append)
-- Next: B08 overlay audio (needs user's choice), B09 admin login. Done: B02–B07.
+- Next: B09 admin login. Done: B02–B08.
 - Local setup: `cp config.example.php config.php`.

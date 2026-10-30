@@ -27,23 +27,10 @@ window.BACKLOG = {
   "B04",
   "B05",
   "B06",
-  "B07"
+  "B07",
+  "B08"
  ],
  "activities": [
-  {
-   "id": "B08",
-   "order": 8,
-   "phase": "A2",
-   "size": "XS",
-   "status": "Ready",
-   "depends": [
-    "B07"
-   ],
-   "read": [],
-   "title": "Decide and implement overlay audio policy",
-   "description": "Videos playing over a live radio mix: muted by default, with an admin setting for volume/unmute. Confirm with the user which they want. Note OBS browser sources can route audio via 'Control audio via OBS'; document that option.",
-   "done_when": "The user has chosen the default, the setting works in OBS, and the OBS setup notes say how audio is handled."
-  },
   {
    "id": "B09",
    "order": 9,
@@ -71,7 +58,7 @@ window.BACKLOG = {
    ],
    "read": [],
    "title": "Admin queue controls",
-   "description": "Admin view: see now-playing + queue, skip current, remove/reorder items, add a video directly, clear queue, pause/resume rotation, open/close submissions. Settings: rotation seconds, max queue length, per-user limit. Optional approval mode: submissions wait in a pending list until approved.",
+   "description": "Admin view: see now-playing + queue, skip current, remove/reorder items, add a video directly, clear queue, pause/resume rotation, open/close submissions. Settings: rotation seconds, max queue length, per-user limit, overlay volume (0 = muted; config overlay_volume is the default). Optional approval mode: submissions wait in a pending list until approved.",
    "done_when": "Every control changes what the overlay shows within one poll, and settings persist in the data dir across restarts."
   },
   {

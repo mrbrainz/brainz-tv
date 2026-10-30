@@ -7,6 +7,9 @@ return [
     // Secret token for the OBS overlay URL (?view=overlay&token=...). Generate with: php -r 'echo bin2hex(random_bytes(16)), "\n";'
     'overlay_token' => '',
 
+    // Overlay volume, 0-100. 0 = muted (default, so videos don't clash with the radio mix).
+    'overlay_volume' => 0,
+
     // Seconds each video shows before the queue rotates to the next one.
     'rotation_seconds' => 180,
 

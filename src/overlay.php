@@ -55,10 +55,16 @@ $caption = ($_GET['caption'] ?? '1') !== '0';
       stage.classList.add('on');
     }
 
+    // Muted at 0. Unmuted playback works in OBS; normal browsers may block it until the page is clicked.
+    function setVolume(volume) {
+      if (volume > 0) { player.unMute(); player.setVolume(volume); } else player.mute();
+    }
+
     async function poll() {
       try {
         const r = await fetch('?api=overlay&token=' + encodeURIComponent(token), {cache: 'no-store'});
-        const {now} = await r.json();
+        const {now, volume} = await r.json();
+        setVolume(volume);
         if ((now ? now.uid : null) !== current) show(now);
       } catch {}
     }

@@ -110,5 +110,20 @@ window.BACKLOG_ARCHIVE = [
   "description": "?view=overlay: transparent background, sized for a browser source (e.g. 1280x720 or configurable), embeds the current video with the YouTube IFrame API, starts at the right offset from the server start time, and polls a JSON endpoint every few seconds to swap videos. Optional caption: title + 'requested by'. Keyed by a secret token in the URL so only the user's OBS can open it.",
   "done_when": "Added as an OBS browser source, the overlay shows the queued videos in turn and switches without a manual refresh; with an empty queue it shows nothing (transparent).",
   "note": "2026-10-30: src/overlay.php + ?api=overlay, both gated by hash_equals on overlay_token (empty token = disabled, 403). IFrame API player fills the source, joins at the server offset, polls every 3s, hides on early end, &caption=0 hides the caption. Browser test with 15s rotation: switched videos with no refresh, showed requester, went transparent when empty. Not yet tried inside OBS itself; YouTube's own title bar and viewer-preference CC can't be fully hidden. Muted for now (B08)."
+ },
+ {
+  "id": "B08",
+  "order": 8,
+  "phase": "A2",
+  "size": "XS",
+  "status": "Done",
+  "depends": [
+   "B07"
+  ],
+  "read": [],
+  "title": "Decide and implement overlay audio policy",
+  "description": "Videos playing over a live radio mix: muted by default, with an admin setting for volume/unmute. Confirm with the user which they want. Note OBS browser sources can route audio via 'Control audio via OBS'; document that option.",
+  "done_when": "The user has chosen the default, the setting works in OBS, and the OBS setup notes say how audio is handled.",
+  "note": "2026-10-30: User chose muted by default. config overlay_volume (0-100, default 0) sent in ?api=overlay and applied every poll; admin override is in B10. Browser: muted at 0, unmuted at 40 within one poll without reload. docs/obs-setup.md covers audio (Control audio via OBS). Not yet tried inside OBS."
  }
 ];

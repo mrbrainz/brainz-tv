@@ -2,3 +2,5 @@
 .claude/settings.local.json
 config.php
 data/
+
+CLAUDE.local.md

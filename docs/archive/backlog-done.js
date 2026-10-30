@@ -49,5 +49,20 @@ window.BACKLOG_ARCHIVE = [
   "description": "No database: store state in data/state.json (queue, now-playing with start time, settings overrides) and data/history.json. One small store class reads/modifies/writes under flock(LOCK_EX), writes via temp file + rename so a crash never leaves half-written JSON, and creates files on first use.",
   "done_when": "Concurrent submissions (e.g. 20 parallel curl POSTs) all land in the queue with none lost and the file is always valid JSON.",
   "note": "2026-10-30: src/Store.php: read(name, default) under a shared lock, update(name, fn(&$data)) under an exclusive flock on <name>.lock, temp file + rename writes, corrupt JSON throws instead of being overwritten, document names restricted to [a-z0-9_-], data dir auto-created with a deny-all .htaccess. index.php creates $store from config data_dir. tests/store_test.php: 20 parallel processes, all updates kept (3/3 runs); the same test with locking removed loses 12 of 20, so it detects races. Document shapes (state/history) are left to B05/B06."
+ },
+ {
+  "id": "B04",
+  "order": 4,
+  "phase": "A1",
+  "size": "S",
+  "status": "Done",
+  "depends": [
+   "B02"
+  ],
+  "read": [],
+  "title": "Parse and validate YouTube input",
+  "description": "Accept a bare 11-char video ID or any common URL form (youtube.com/watch?v=, youtu.be/, /shorts/, /embed/, /live/, m. and music. hosts, extra params like &t= or &list=). Reject anything else. Look up the video via YouTube oEmbed (no API key) to confirm it exists and is embeddable, and capture title + thumbnail for display.",
+  "done_when": "A test script covers each URL form plus junk input; unknown/private/non-embeddable videos are rejected with a clear message.",
+  "note": "2026-10-30: src/YouTube.php parseId() + check() via oEmbed (curl, 5s timeout, injectable fetch). tests/youtube_test.php: 18 valid + 14 invalid forms and canned 200/400/401/403/404/0/500 responses pass; --live confirmed 200+title and 400 for a missing ID. Non-embeddable (401) not checked live: no known test video."
  }
 ];

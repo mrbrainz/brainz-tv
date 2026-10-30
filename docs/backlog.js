@@ -23,23 +23,10 @@ window.BACKLOG = {
  "completed_ids": [
   "B01",
   "B02",
-  "B03"
+  "B03",
+  "B04"
  ],
  "activities": [
-  {
-   "id": "B04",
-   "order": 4,
-   "phase": "A1",
-   "size": "S",
-   "status": "Ready",
-   "depends": [
-    "B02"
-   ],
-   "read": [],
-   "title": "Parse and validate YouTube input",
-   "description": "Accept a bare 11-char video ID or any common URL form (youtube.com/watch?v=, youtu.be/, /shorts/, /embed/, /live/, m. and music. hosts, extra params like &t= or &list=). Reject anything else. Look up the video via YouTube oEmbed (no API key) to confirm it exists and is embeddable, and capture title + thumbnail for display.",
-   "done_when": "A test script covers each URL form plus junk input; unknown/private/non-embeddable videos are rejected with a clear message."
-  },
   {
    "id": "B05",
    "order": 5,

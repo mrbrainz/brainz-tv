@@ -4,8 +4,9 @@ Lightweight single-page PHP app. No framework, no Composer, no build step.
 
 ## Layout
 - `public/index.php` — the whole app (entry point, docroot).
+- `src/YouTube.php` — parse YouTube URL/ID, check via oEmbed.
 - `src/Store.php` — locked JSON file storage (no DB). Data lives in `data/` (gitignored).
-- `tests/*.php` — plain PHP test scripts: `php tests/store_test.php`.
+- `tests/*.php` — plain PHP test scripts: `php tests/store_test.php`, `php tests/youtube_test.php [--live]`.
 - `docs/backlog.js` — every to-do, as tickets. Board: `docs/backlog.html`.
 - `tools/backlog.mjs` — backlog CLI (Node, no deps).
 
@@ -36,5 +37,5 @@ Lightweight single-page PHP app. No framework, no Composer, no build step.
 - Ticket `note`s: 1–3 sentences (what changed, how verified, limits). No narration.
 
 ## Status (max 3 lines; replace, never append)
-- Next: B04 YouTube validation. Done so far: B02 routing/config, B03 storage.
+- Next: B05 user view, B06 rotation (both unblocked). Done: B02–B04.
 - Local setup: `cp config.example.php config.php`.

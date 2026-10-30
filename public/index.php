@@ -130,6 +130,14 @@ if ($api !== null) {
                 'offset' => max(0, ($state['paused_at'] ?? time()) - $now['started_at']), 'remaining' => $queue->remaining($state),
             ], 'paused' => $state['paused_at'] !== null];
         },
+        // POST from the overlay when YouTube refuses to play the current video.
+        'overlay-error' => function () use ($queue, $overlayAllowed) {
+            if (!$overlayAllowed() || $_SERVER['REQUEST_METHOD'] !== 'POST') {
+                http_response_code(403);
+                return ['error' => 'Bad overlay token'];
+            }
+            return ['error' => $queue->unplayable(is_string($_GET['uid'] ?? null) ? $_GET['uid'] : '')];
+        },
         'queue' => function () use ($queue, $listener) {
             $state = $queue->snapshot();
             return Queue::forListener($state, $listener) + ['remaining' => $queue->remaining($state)];

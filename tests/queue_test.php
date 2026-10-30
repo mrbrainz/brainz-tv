@@ -101,6 +101,19 @@ $expect('approve', [$appr->snapshot()['pending'], $ids()], [[], ['f', 'g']]);
 $full = new Queue($storeA, ['max_queue_length' => 2] + $config, fn() => $t);
 $expect('full counts queue', $full->add($video('h'), '', 'x') !== null, true);
 
+// Unplayable videos.
+$qa->clear();
+$qa->skip();
+foreach (['u1', 'u2'] as $v) $qa->add($video($v), '', 'x');
+$s = $qa->snapshot();
+$expect('u1 playing', $playing($s), 'u1');
+$expect('stale uid ignored', $qa->unplayable('nope') !== null, true);
+$expect('unplayable skips', [$qa->unplayable($s['now']['uid']), $playing($qa->snapshot())], [null, 'u2']);
+$expect('repeat report ignored', [$qa->unplayable($s['now']['uid']) !== null, $playing($qa->snapshot())], [true, 'u2']);
+$expect('flagged ID refused', $qa->add($video('u1'), '', 'x') !== null, true);
+$expect('flagged ID refused for admin too', $qa->add($video('u1'), '', 'x', true) !== null, true);
+$expect('flag stored', array_keys($storeA->read('unplayable')), ['u1']);
+
 // Parallel polls on an expired video: exactly one advance.
 $dir2 = $tmp();
 $store2 = new Store($dir2);

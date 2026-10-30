@@ -34,8 +34,12 @@ $caption = ($_GET['caption'] ?? '1') !== '0';
           onReady: () => { ready = true; poll(); },
           // Video finished before its rotation slot ended: hide rather than show YouTube's end screen.
           onStateChange: e => { if (e.data === YT.PlayerState.ENDED) stage.classList.remove('on'); },
-          // Unplayable here (e.g. 150: owner blocks embedding, which oEmbed doesn't always reveal): stay transparent.
-          onError: () => stage.classList.remove('on'),
+          // Unplayable here (e.g. 150: owner blocks embedding, which oEmbed doesn't always reveal):
+          // stay transparent and tell the server, which skips to the next video and flags this one.
+          onError: () => {
+            stage.classList.remove('on');
+            if (current) fetch('?api=overlay-error&token=' + encodeURIComponent(token) + '&uid=' + encodeURIComponent(current), {method: 'POST'}).then(poll, () => {});
+          },
         },
       });
     };

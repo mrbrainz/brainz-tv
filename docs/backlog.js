@@ -30,26 +30,10 @@ window.BACKLOG = {
   "B07",
   "B08",
   "B09",
-  "B10"
+  "B10",
+  "B15"
  ],
  "activities": [
-  {
-   "id": "B15",
-   "order": 15,
-   "phase": "A2",
-   "size": "S",
-   "status": "Ready",
-   "depends": [
-    "B07"
-   ],
-   "read": [
-    "src/overlay.php",
-    "src/YouTube.php"
-   ],
-   "title": "Skip videos YouTube won't play in the overlay",
-   "description": "oEmbed accepts some videos the player then refuses with error 150/101 (owner blocks embedding; seen locally for Rick Astley and PSY, which may be localhost-specific). Today the overlay just goes transparent for the rest of the slot. Have the overlay report the error (token-gated, current uid only) so the server skips to the next video and flags the video ID so it is rejected on future submissions. Re-check which videos fail once on the live domain (B13).",
-   "done_when": "An unembeddable video in the queue is skipped within a few seconds of the overlay hitting the error, and submitting it again is refused with a clear message."
-  },
   {
    "id": "B11",
    "order": 11,

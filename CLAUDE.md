@@ -42,5 +42,5 @@ Lightweight single-page PHP app. No framework, no Composer, no build step.
 - Ticket `note`s: 1–3 sentences (what changed, how verified, limits). No narration.
 
 ## Status (max 3 lines; replace, never append)
-- Next: B11 abuse limits, B15 skip unplayable videos. Done: B02–B10.
+- Next: B11 abuse limits. Done: B02–B10, B15.
 - Local setup: `cp config.example.php config.php`.

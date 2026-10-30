@@ -157,5 +157,23 @@ window.BACKLOG_ARCHIVE = [
   "description": "Admin view: see now-playing + queue, skip current, remove/reorder items, add a video directly, clear queue, pause/resume rotation, open/close submissions. Settings: rotation seconds, max queue length, per-user limit, overlay volume (0 = muted; config overlay_volume is the default). Optional approval mode: submissions wait in a pending list until approved.",
   "done_when": "Every control changes what the overlay shows within one poll, and settings persist in the data dir across restarts.",
   "note": "2026-10-30: Queue gained pause/resume, skip, move, remove, approve, clear and a pending list; settings document overrides config (validated ranges). src/admin.php UI + ?api=admin-action (POST, CSRF). Tests: queue_test admin cases, curl run of every action, browser run of move/pause/settings, overlay cues paused video at its offset and resumes from it. Found YouTube error 150 on label videos that oEmbed passed: overlay now hides on error; follow-up B15."
+ },
+ {
+  "id": "B15",
+  "order": 15,
+  "phase": "A2",
+  "size": "S",
+  "status": "Done",
+  "depends": [
+   "B07"
+  ],
+  "read": [
+   "src/overlay.php",
+   "src/YouTube.php"
+  ],
+  "title": "Skip videos YouTube won't play in the overlay",
+  "description": "oEmbed accepts some videos the player then refuses with error 150/101 (owner blocks embedding; seen locally for Rick Astley and PSY, which may be localhost-specific). Today the overlay just goes transparent for the rest of the slot. Have the overlay report the error (token-gated, current uid only) so the server skips to the next video and flags the video ID so it is rejected on future submissions. Re-check which videos fail once on the live domain (B13).",
+  "done_when": "An unembeddable video in the queue is skipped within a few seconds of the overlay hitting the error, and submitting it again is refused with a clear message.",
+  "note": "2026-10-30: Overlay onError POSTs ?api=overlay-error (token + POST only); Queue::unplayable(uid) skips only if uid is still playing and flags the video ID in the unplayable document; add() refuses flagged IDs (listener and admin). queue_test covers stale/repeat reports; live: blocked Rick Astley skipped to the next video within the 8s check, resubmit refused. Flags are permanent with no admin unflag; data/ is per environment, so local flags do not reach production."
  }
 ];

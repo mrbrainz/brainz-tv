@@ -9,6 +9,7 @@ declare(strict_types=1);
 // `by` is the submitter's anonymous listener cookie, used to show "your" entries.
 // Rotation is lazy (no cron): every snapshot() advances the queue if the current video's
 // time is up. Finished videos go to the 'history' document (newest first, capped).
+// Videos the overlay's player refused are listed by video ID in the 'unplayable' document.
 // Config keys used: rotation_seconds, max_queue_length, submissions_open, approval.
 final class Queue
 {
@@ -47,6 +48,9 @@ final class Queue
     // Admin adds skip the open/full/approval checks.
     public function add(array $video, string $name, string $by, bool $admin = false): ?string
     {
+        if (isset($this->store->read('unplayable')[$video['id']])) {
+            return "YouTube won't let that video play on stream. Try a different upload of it.";
+        }
         return $this->change(function (array &$state) use ($video, $name, $by, $admin) {
             if (!$admin && !$this->config['submissions_open']) {
                 return 'Requests are closed right now.';
@@ -77,6 +81,21 @@ final class Queue
             $this->advance($state);
             return null;
         })[0];
+    }
+
+    // The overlay's player refused the current video: flag its ID and move on. Ignored unless
+    // $uid is still the one playing, so a late or repeated report can't skip the next video.
+    public function unplayable(string $uid): ?string
+    {
+        [$id, $state] = $this->change(function (array &$state) use ($uid) {
+            if (($state['now']['uid'] ?? null) !== $uid) return null;
+            $id = $state['now']['id'];
+            $this->advance($state);
+            return $id;
+        });
+        if ($id === null) return 'Not the current video.';
+        $this->store->update('unplayable', function (array &$list) use ($id) { $list[$id] = ($this->clock)(); });
+        return null;
     }
 
     public function pause(bool $paused): ?string

@@ -271,5 +271,22 @@ window.BACKLOG_ARCHIVE = [
   "description": "User request: when nothing is playing, the overlay shows assets/standby.gif with a message telling viewers to visit the site URL to add videos. The live web root only has the loader, so the GIF is served through index.php (?asset=, allowlisted, cached). &standby=0 keeps the old transparent idle state.",
   "done_when": "With an empty queue the overlay shows the GIF and the site URL message; it switches to a video when one is queued and back to standby when the queue empties, locally and on tv.djbrainz.com.",
   "note": "2026-10-30: ?asset= route (allowlist, 1-day cache, no cookies) serves assets/standby.gif; overlay shows it with an \"Add a video to the queue at <host>\" message whenever nothing is playing, &standby=0 opts out. Browser: standby on load, video after queueing, back to standby when empty."
+ },
+ {
+  "id": "B18",
+  "order": 18,
+  "phase": "A2",
+  "size": "XS",
+  "status": "Done",
+  "depends": [
+   "B17"
+  ],
+  "read": [
+   "src/overlay.php"
+  ],
+  "title": "Bigger standby URL for small browser sources",
+  "description": "User feedback: in a ~376x211 OBS source the standby URL was too small (14px floor). Size the message by viewport width with the URL on its own line at double size.",
+  "done_when": "At 376x211 the URL is clearly readable on one line.",
+  "note": "2026-10-30: Message 4.5vw, URL 9vw bold on its own line (34px at 376 wide, was 14px). Checked in a 376x211 frame with tv.djbrainz.com: fits on one line, box 275x68."
  }
 ];

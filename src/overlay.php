@@ -22,16 +22,17 @@ $site = preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? ''));
     #standby { position: fixed; inset: 0; opacity: 0; transition: opacity .4s; }
     #standby.on { opacity: 1; }
     #standby img { width: 100%; height: 100%; object-fit: contain; display: block; }
-    #standby p { position: absolute; left: 50%; bottom: 4vw; transform: translateX(-50%); margin: 0; width: max-content; max-width: 90%;
-      padding: .5em 1em; border-radius: .4em; background: rgba(0, 0, 0, .7); color: #fff; text-align: center;
-      font: 600 clamp(14px, 3vw, 44px)/1.3 system-ui, sans-serif; }
-    #standby b { color: #bf94ff; }
+    /* Sized by viewport width so it stays readable in small browser sources (e.g. 376x211). */
+    #standby p { position: absolute; left: 50%; bottom: 3vw; transform: translateX(-50%); margin: 0; width: max-content; max-width: 94%;
+      padding: .3em .7em; border-radius: .3em; background: rgba(0, 0, 0, .75); color: #fff; text-align: center;
+      font: 600 4.5vw/1.15 system-ui, sans-serif; }
+    #standby b { display: block; color: #bf94ff; font-size: 2em; font-weight: 800; letter-spacing: .01em; }
   </style>
 </head>
 <body>
   <div id="stage"><div id="player"></div><div id="caption"></div></div>
 <?php if ($standby): ?>
-  <div id="standby"><img src="?asset=standby.gif" alt=""><p>Add a video to the queue at <b><?= htmlspecialchars($site, ENT_QUOTES) ?></b></p></div>
+  <div id="standby"><img src="?asset=standby.gif" alt=""><p>Add a video to the queue at<b><?= htmlspecialchars($site, ENT_QUOTES) ?></b></p></div>
 <?php endif; ?>
   <script>
   (() => {

@@ -33,25 +33,10 @@ window.BACKLOG = {
   "B10",
   "B11",
   "B12",
-  "B15"
+  "B15",
+  "B16"
  ],
  "activities": [
-  {
-   "id": "B16",
-   "order": 16,
-   "phase": "A2",
-   "size": "XS",
-   "status": "Ready",
-   "depends": [
-    "B07"
-   ],
-   "read": [
-    "src/overlay.php"
-   ],
-   "title": "Loop short videos until their slot ends",
-   "description": "User decision (B12): when a video ends before its rotation slot, loop it from the start instead of hiding the overlay. Rotation timing stays server-side; the overlay just replays on ENDED.",
-   "done_when": "In the browser, a video shorter than the rotation time replays from the start until the server rotates to the next video."
-  },
   {
    "id": "B13",
    "order": 13,

@@ -32,8 +32,8 @@ $caption = ($_GET['caption'] ?? '1') !== '0';
         playerVars: {autoplay: 1, controls: 0, disablekb: 1, fs: 0, iv_load_policy: 3, rel: 0, playsinline: 1, mute: 1, origin: location.origin},
         events: {
           onReady: () => { ready = true; poll(); },
-          // Video finished before its rotation slot ended: hide rather than show YouTube's end screen.
-          onStateChange: e => { if (e.data === YT.PlayerState.ENDED) stage.classList.remove('on'); },
+          // Video finished before its rotation slot ended: loop it until the server rotates.
+          onStateChange: e => { if (e.data === YT.PlayerState.ENDED && !paused) { player.seekTo(0, true); player.playVideo(); } },
           // Unplayable here (e.g. 150: owner blocks embedding, which oEmbed doesn't always reveal):
           // stay transparent and tell the server, which skips to the next video and flags this one.
           onError: () => {

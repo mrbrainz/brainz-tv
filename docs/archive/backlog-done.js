@@ -358,5 +358,21 @@ window.BACKLOG_ARCHIVE = [
   "description": "User request: move 'Your name' above the search box so it's the first thing listeners fill in.",
   "done_when": "The name field is the first input and is still sent with both search picks and pasted links, with or without JS.",
   "note": "2026-10-30: Name input moved above search, outside the form but linked with form=\"submit\". curl no-JS POST kept the name; browser at 375px: search pick credited 'added by Searcher'."
+ },
+ {
+  "id": "B23",
+  "order": 23,
+  "phase": "A4",
+  "size": "XS",
+  "status": "Done",
+  "depends": [],
+  "read": [
+   "src/Queue.php",
+   "tests/queue_test.php"
+  ],
+  "title": "Atomic submit cooldown",
+  "description": "Review 2026-10-30: Queue::add reads the submit cooldown in one submits update and records it in another after the state change, so parallel POSTs from one IP both pass.",
+  "done_when": "The cooldown is reserved in the same locked update as the check (rolled back if the add fails); a test shows a second add inside the cooldown is refused.",
+  "note": "2026-10-30: Queue::add now checks and reserves the submit cooldown in one locked update, and gives it back if the add is rejected. New RacingStore test in queue_test fails before the fix and passes after."
  }
 ];

@@ -191,6 +191,26 @@ $q3->snapshot();
 $store3->stale = null;
 $expect('stale reads advance once', $playing($store3->read('state')), 's1');
 
-foreach ([$dir, $dir2, $dir3, $dirA, $dirL] as $d) { array_map('unlink', glob("$d/{*,.htaccess}", GLOB_BRACE)); rmdir($d); }
+// Deterministic submit race: a second add from the same IP lands while the first holds the state lock.
+// The first add's cooldown reservation must already be in place, so the second is refused.
+final class RacingStore extends Store
+{
+    public ?Closure $during = null;
+    public function update(string $name, callable $change, array $default = []): mixed
+    {
+        if ($name === 'state' && $this->during) { $f = $this->during; $this->during = null; $f(); }
+        return parent::update($name, $change, $default);
+    }
+}
+$dir4 = $tmp();
+$store4 = new RacingStore($dir4);
+$q4 = new Queue($store4, ['submit_cooldown_seconds' => 30] + $config, fn() => 500);
+$racer = null;
+$store4->during = function () use (&$racer, $q4, $video) { $racer = $q4->add($video('r2'), '', 'b', false, 'ipR'); };
+$expect('racing add wins', $q4->add($video('r1'), '', 'a', false, 'ipR'), null);
+$expect('racing add refused', $racer, 'You can add another video in 30 seconds.');
+$expect('one racing item queued', count($store4->read('state')['queue']), 1);
+
+foreach ([$dir, $dir2, $dir3, $dir4, $dirA, $dirL] as $d) { array_map('unlink', glob("$d/{*,.htaccess}", GLOB_BRACE)); rmdir($d); }
 echo $failures ? "$failures failure(s)\n" : "ok: rotation + 10 racing polls\n";
 exit($failures ? 1 : 0);

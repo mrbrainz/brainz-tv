@@ -66,9 +66,14 @@ final class Queue
                 if ($played['ended_at'] < $since) break; // newest first
                 if ($played['id'] === $video['id']) return 'That video played recently. Pick something else for now.';
             }
-            $wait = $this->store->update('submits', function (array &$submits) use ($ip, $now) {
+            // Check and reserve the cooldown in one locked step, so parallel requests can't both pass.
+            [$wait, $previous] = $this->store->update('submits', function (array &$submits) use ($ip, $now) {
                 $submits = array_filter($submits, fn($t) => $t > $now - 3600);
-                return $ip === '' ? 0 : max(0, ($submits[$ip] ?? 0) + $this->config['submit_cooldown_seconds'] - $now);
+                if ($ip === '') return [0, null];
+                $previous = $submits[$ip] ?? null;
+                $wait = max(0, ($previous ?? 0) + $this->config['submit_cooldown_seconds'] - $now);
+                if ($wait === 0) $submits[$ip] = $now;
+                return [$wait, $previous];
             });
             if ($wait > 0) return "You can add another video in $wait seconds.";
         }
@@ -101,8 +106,12 @@ final class Queue
             $state[!$admin && $this->config['approval'] ? 'pending' : 'queue'][] = $item;
             return null;
         })[0];
-        if ($error === null && !$admin && $ip !== '') {
-            $this->store->update('submits', function (array &$submits) use ($ip, $now) { $submits[$ip] = $now; });
+        // Rejected adds give the reservation back (unless a newer request has taken it since).
+        if ($error !== null && !$admin && $ip !== '') {
+            $this->store->update('submits', function (array &$submits) use ($ip, $now, $previous) {
+                if (($submits[$ip] ?? null) !== $now) return;
+                if ($previous === null) unset($submits[$ip]); else $submits[$ip] = $previous;
+            });
         }
         return $error;
     }

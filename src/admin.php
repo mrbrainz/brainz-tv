@@ -57,6 +57,8 @@
       <label for="s-rot">Seconds per video</label><input id="s-rot" name="rotation_seconds" type="number" min="10" max="3600" required>
       <label for="s-max">Max queue length</label><input id="s-max" name="max_queue_length" type="number" min="1" max="200" required>
       <label for="s-per">Per-listener limit</label><input id="s-per" name="per_user_limit" type="number" min="1" max="50" required>
+      <label for="s-cd">Seconds between a listener's requests</label><input id="s-cd" name="submit_cooldown_seconds" type="number" min="0" max="3600" required>
+      <label for="s-rp">Minutes before a played video can be requested again</label><input id="s-rp" name="replay_cooldown_minutes" type="number" min="0" max="1440" required>
       <label for="s-vol">Overlay volume (0 = muted)</label><input id="s-vol" name="overlay_volume" type="number" min="0" max="100" required>
       <label class="check"><input type="checkbox" name="submissions_open"> Requests open</label>
       <label class="check"><input type="checkbox" name="approval"> Approve requests before they're queued</label>
@@ -65,6 +67,13 @@
 
     <h2>Recently played</h2>
     <div id="history"></div>
+
+    <h2>Blocklist</h2>
+    <form id="block-channel" class="row">
+      <input name="key" required placeholder="Channel name to block" style="flex:1 1 12rem">
+      <button>Block channel</button>
+    </form>
+    <div id="blocked" style="margin-top:.5rem"></div>
   </main>
   <script>
   (() => {
@@ -73,6 +82,7 @@
     const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const mmss = s => s == null ? '' : Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
     const row = (i, pos, acts = '') => `<li class="item"><span class="pos">${pos}</span><img src="${esc(i.thumbnail)}" alt="" loading="lazy"><div><div class="title">${esc(i.title)}</div><div class="meta">${esc(i.author)}${i.name ? ' · ' + esc(i.name) : ''}</div></div><div class="acts">${acts}</div></li>`;
+    const blockBtn = i => `<button data-act="block" data-kind="video" data-key="${esc(i.id)}" data-label="${esc(i.title)}" data-uid="${esc(i.uid)}" class="ghost" aria-label="Block this video" title="Block this video">⛔</button>`;
     const list = (items, empty) => items.length ? `<ol>${items.join('')}</ol>` : `<p class="empty">${empty}</p>`;
     let state = null, settingsDirty = false, remaining = null;
 
@@ -86,10 +96,17 @@
       $('pause-btn').dataset.act = s.paused_at ? 'resume' : 'pause';
       $('pending-wrap').hidden = !s.pending.length && !s.settings.approval;
       $('pending').innerHTML = list(s.pending.map((i, n) => row(i, n + 1,
-        `<button data-act="approve" data-uid="${esc(i.uid)}">Approve</button><button data-act="remove" data-uid="${esc(i.uid)}" class="ghost">Reject</button>`)), 'No requests waiting.');
+        `<button data-act="approve" data-uid="${esc(i.uid)}">Approve</button><button data-act="remove" data-uid="${esc(i.uid)}" class="ghost">Reject</button>${blockBtn(i)}`)), 'No requests waiting.');
       $('queue').innerHTML = list(s.queue.map((i, n) => row(i, n + 1,
-        `<button data-act="move" data-by="-1" data-uid="${esc(i.uid)}" class="ghost" aria-label="Move up">↑</button><button data-act="move" data-by="1" data-uid="${esc(i.uid)}" class="ghost" aria-label="Move down">↓</button><button data-act="remove" data-uid="${esc(i.uid)}" class="ghost" aria-label="Remove">✕</button>`)), 'The queue is empty.');
-      $('history').innerHTML = list(s.history.map(i => row(i, '')), 'Nothing yet.');
+        `<button data-act="move" data-by="-1" data-uid="${esc(i.uid)}" class="ghost" aria-label="Move up">↑</button><button data-act="move" data-by="1" data-uid="${esc(i.uid)}" class="ghost" aria-label="Move down">↓</button><button data-act="remove" data-uid="${esc(i.uid)}" class="ghost" aria-label="Remove">✕</button>${blockBtn(i)}`)), 'The queue is empty.');
+      $('history').innerHTML = list(s.history.map(i => row(i, '', blockBtn({...i, uid: ''}))), 'Nothing yet.');
+      const unblock = (kind, key, label, note) => `<li class="item" style="grid-template-columns:1fr auto"><div><div class="title">${esc(label || key)}</div><div class="meta">${note}</div></div><div class="acts"><button data-act="unblock" data-kind="${kind}" data-key="${esc(key)}" class="ghost">Unblock</button></div></li>`;
+      const blocked = [
+        ...Object.entries(s.blocklist.videos || {}).map(([id, title]) => unblock('video', id, title, 'Blocked video · ' + esc(id))),
+        ...Object.entries(s.blocklist.channels || {}).map(([k, name]) => unblock('channel', name, name, 'Blocked channel')),
+        ...Object.keys(s.unplayable || {}).map(id => unblock('unplayable', id, id, "YouTube refused to play it on stream")),
+      ];
+      $('blocked').innerHTML = list(blocked, 'Nothing blocked.');
       if (!settingsDirty) {
         const f = $('settings');
         for (const [k, v] of Object.entries(s.settings)) f[k].type === 'checkbox' ? (f[k].checked = v) : (f[k].value = v);
@@ -120,13 +137,23 @@
     document.addEventListener('click', e => {
       const b = e.target.closest('button[data-act]');
       if (!b) return;
-      if (b.dataset.act === 'clear' && !confirm('Clear the whole queue?')) return;
-      act({action: b.dataset.act, uid: b.dataset.uid, by: b.dataset.by ? Number(b.dataset.by) : undefined});
+      const d = b.dataset;
+      if (d.act === 'clear' && !confirm('Clear the whole queue?')) return;
+      if (d.act === 'block') {
+        if (!confirm(`Block "${d.label}"? Listeners won't be able to request it.`)) return;
+        act({action: 'block', kind: d.kind, key: d.key, label: d.label}).then(ok => ok && d.uid && act({action: 'remove', uid: d.uid}));
+        return;
+      }
+      act({action: d.act, uid: d.uid, by: d.by ? Number(d.by) : undefined, kind: d.kind, key: d.key});
     });
     $('add').addEventListener('submit', async e => {
       e.preventDefault();
       const f = e.target;
       if (await act({action: 'add', video: f.video.value, name: f.name.value})) f.reset();
+    });
+    $('block-channel').addEventListener('submit', async e => {
+      e.preventDefault();
+      if (await act({action: 'block', kind: 'channel', key: e.target.key.value})) e.target.reset();
     });
     $('settings').addEventListener('input', () => { settingsDirty = true; });
     $('settings').addEventListener('submit', async e => {

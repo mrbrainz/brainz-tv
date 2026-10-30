@@ -20,8 +20,10 @@ $store = new Store($config['data_dir']);
 const SETTINGS = [
     'rotation_seconds' => [10, 3600], 'max_queue_length' => [1, 200], 'per_user_limit' => [1, 50],
     'overlay_volume' => [0, 100], 'submissions_open' => 'bool', 'approval' => 'bool',
+    'submit_cooldown_seconds' => [0, 3600], 'replay_cooldown_minutes' => [0, 1440],
 ];
-$config = array_merge(['submissions_open' => true, 'approval' => false], $config,
+$config = array_merge(['submissions_open' => true, 'approval' => false, 'submit_cooldown_seconds' => 60,
+    'replay_cooldown_minutes' => 60], $config,
     array_intersect_key($store->read('settings'), SETTINGS));
 $queue = new Queue($store, $config);
 $auth = new Auth($store, $config['admin_password_hash'], $_SERVER['REMOTE_ADDR'] ?? '');
@@ -66,6 +68,8 @@ if (!is_string($listener) || !preg_match('/^[a-f0-9]{32}$/', $listener)) {
     $listener = bin2hex(random_bytes(16));
     setCookieValue('lid', $listener, 31536000);
 }
+// Keyed hash of the listener's IP for limits, so raw IPs are never stored.
+$ipKey = hash_hmac('sha256', $_SERVER['REMOTE_ADDR'] ?? '', $config['overlay_token'] . $config['admin_password_hash']);
 
 $api = $_GET['api'] ?? null;
 $view = $_GET['view'] ?? 'user';
@@ -75,8 +79,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $api === null && $view === 'user') 
     $name = is_string($_POST['name'] ?? null) ? trim(preg_replace('/[\p{C}]+/u', '', $_POST['name']) ?? '') : '';
     $name = mb_substr($name, 0, 30);
     $input = is_string($_POST['video'] ?? null) ? $_POST['video'] : '';
-    $video = (new YouTube())->check($input);
-    $error = $video['ok'] ? $queue->add($video, $name, $listener) : $video['error'];
+    // Honeypot: the hidden "website" field is only ever filled in by bots. Pretend it worked.
+    $isBot = ($_POST['website'] ?? '') !== '';
+    $video = $isBot ? ['ok' => true, 'title' => 'your video'] : (new YouTube())->check($input);
+    $error = $isBot ? null : ($video['ok'] ? $queue->add($video, $name, $listener, false, $ipKey) : $video['error']);
     setCookieValue('name', $name, 31536000);
     $result = $error === null
         ? ['ok' => true, 'message' => $config['approval']
@@ -150,10 +156,13 @@ if ($api !== null) {
             'remaining' => $queue->remaining($state),
             'settings' => array_intersect_key($config, SETTINGS),
             'history' => array_slice($store->read('history'), 0, 10),
+            'blocklist' => $store->read('blocklist', ['videos' => [], 'channels' => []]),
+            'unplayable' => $store->read('unplayable'),
         ];
     };
     // POST JSON {action, uid?, by?, video?, name?, settings?} → {error: null|string}
     $routes['admin-action'] = function () use ($queue, $store) {
+        // block: {kind: video|channel, key, label?}; unblock: {kind: video|channel|unplayable, key}
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') notFound();
         $in = json_decode((string) file_get_contents('php://input'), true);
         $in = is_array($in) ? $in : [];
@@ -171,6 +180,9 @@ if ($api !== null) {
                 $name = is_string($in['name'] ?? null) ? mb_substr(trim($in['name']), 0, 30) : '';
                 return $video['ok'] ? $queue->add($video, $name, 'admin', true) : $video['error'];
             })(),
+            'block' => $queue->block((string) ($in['kind'] ?? ''), is_string($in['key'] ?? null) ? trim($in['key']) : '',
+                is_string($in['label'] ?? null) ? $in['label'] : ''),
+            'unblock' => $queue->unblock((string) ($in['kind'] ?? ''), is_string($in['key'] ?? null) ? $in['key'] : ''),
             'settings' => saveSettings($store, is_array($in['settings'] ?? null) ? $in['settings'] : []),
             default => 'Unknown action.',
         }];
@@ -249,6 +261,7 @@ $savedName = is_string($_COOKIE['name'] ?? null) ? mb_substr($_COOKIE['name'], 0
     <?php if (!$config['submissions_open']): ?><p class="msg err">Requests are closed right now.</p><?php endif; ?>
     <form method="post" id="submit"<?= $config['submissions_open'] ? '' : ' hidden' ?>>
       <input name="name" maxlength="30" placeholder="Your name (optional)" value="<?= $h($savedName) ?>" autocomplete="nickname">
+      <input name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px">
       <input name="video" required placeholder="YouTube link or video ID" autocomplete="off">
       <button>Add to queue</button>
     </form>

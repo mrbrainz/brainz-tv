@@ -37,7 +37,9 @@ final class Auth
 
     public function loggedIn(): bool
     {
-        return ($_SESSION['admin'] ?? false) === true;
+        // Sessions are tied to the current password hash, so changing the password logs everyone out.
+        return ($_SESSION['admin'] ?? false) === true && $this->enabled()
+            && hash_equals(hash('sha256', $this->hash), $_SESSION['pw'] ?? '');
     }
 
     // Null on success, otherwise an error message.
@@ -67,7 +69,7 @@ final class Auth
         $this->store->update('logins', function (array &$logins) use ($key) { unset($logins[$key]); });
         if (session_status() === PHP_SESSION_ACTIVE) {
             session_regenerate_id(true);
-            $_SESSION = ['admin' => true, 'csrf' => bin2hex(random_bytes(32))];
+            $_SESSION = ['admin' => true, 'pw' => hash('sha256', $this->hash), 'csrf' => bin2hex(random_bytes(32))];
         }
         return null;
     }

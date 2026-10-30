@@ -7,7 +7,8 @@ require __DIR__ . '/../src/Store.php';
 require __DIR__ . '/../src/Queue.php';
 
 $video = fn(string $id) => ['id' => $id, 'title' => $id, 'author' => '', 'thumbnail' => ''];
-$config = ['rotation_seconds' => 20, 'max_queue_length' => 20, 'submissions_open' => true, 'approval' => false];
+$config = ['rotation_seconds' => 20, 'max_queue_length' => 20, 'submissions_open' => true, 'approval' => false,
+    'per_user_limit' => 99, 'submit_cooldown_seconds' => 0, 'replay_cooldown_minutes' => 0];
 
 if (($argv[1] ?? '') === 'child') {
     time_sleep_until((float) $argv[3]); // start all children together
@@ -114,6 +115,46 @@ $expect('flagged ID refused', $qa->add($video('u1'), '', 'x') !== null, true);
 $expect('flagged ID refused for admin too', $qa->add($video('u1'), '', 'x', true) !== null, true);
 $expect('flag stored', array_keys($storeA->read('unplayable')), ['u1']);
 
+// Listener limits and blocklist.
+$dirL = $tmp();
+$t = 10000;
+$storeL = new Store($dirL);
+$limits = ['per_user_limit' => 2, 'submit_cooldown_seconds' => 30, 'replay_cooldown_minutes' => 10] + $config;
+$ql = new Queue($storeL, $limits, function () use (&$t) { return $t; });
+$expect('first add', $ql->add($video('l1'), '', 'me', false, 'ip1'), null);
+$expect('cooldown', $ql->add($video('l2'), '', 'me', false, 'ip1'), 'You can add another video in 30 seconds.');
+$expect('other IP not cooled down', $ql->add($video('l2'), '', 'you', false, 'ip2'), null);
+$t += 30;
+$expect('duplicate (playing)', $ql->add($video('l1'), '', 'me', false, 'ip1'), 'That video is already in the queue.');
+$expect('duplicate (queued)', $ql->add($video('l2'), '', 'me', false, 'ip1'), 'That video is already in the queue.');
+$expect('rejected adds keep cooldown clear', $ql->add($video('l3'), '', 'me', false, 'ip1'), null);
+$t += 30;
+$expect('per-user limit by cookie', str_starts_with((string) $ql->add($video('l4'), '', 'me', false, 'ip9'), 'You already have 2'), true);
+$expect('per-user limit by IP', str_starts_with((string) $ql->add($video('l4'), '', 'new-cookie', false, 'ip1'), 'You already have 2'), true);
+$expect('admin bypasses limits', $ql->add($video('l5'), '', 'admin', true), null);
+$ql->skip(); // starts l1
+$ql->skip(); // ends l1
+$t += 60;
+$expect('replay cooldown', $ql->add($video('l1'), '', 'other', false, 'ip3'), 'That video played recently. Pick something else for now.');
+$t += 601;
+$ql->skip(); $ql->skip(); $ql->skip(); $ql->skip();
+$expect('replay allowed after cooldown', $ql->add($video('l1'), '', 'other', false, 'ip3'), null);
+$ql->block('video', 'b1', 'Some title');
+$ql->block('channel', 'Bad Channel');
+$expect('blocked video', $ql->add($video('b1'), '', 'z', false, 'ip4'), "That video can't be requested here.");
+$expect('blocked channel, any case', $ql->add(['author' => 'bad channel'] + $video('b2'), '', 'z', false, 'ip4'), "That video can't be requested here.");
+$expect('admin can add blocked', $ql->add($video('b1'), '', 'admin', true), null);
+$ql->unblock('video', 'b1');
+$ql->unblock('channel', 'BAD CHANNEL');
+$expect('unblocked', $storeL->read('blocklist'), ['videos' => [], 'channels' => []]);
+$storeL->update('unplayable', function (array &$l) { $l['x1'] = 1; });
+$ql->unblock('unplayable', 'x1');
+$expect('unflag unplayable', $storeL->read('unplayable'), []);
+$expect('ip hidden from listeners', array_key_exists('ip', Queue::forListener($ql->snapshot(), 'z')['now'] ?? []), false);
+$t += 7200;
+$ql->add($video('l9'), '', 'q', false, 'ip5');
+$expect('old submit times pruned', array_keys($storeL->read('submits')), ['ip5']);
+
 // Parallel polls on an expired video: exactly one advance.
 $dir2 = $tmp();
 $store2 = new Store($dir2);
@@ -150,6 +191,6 @@ $q3->snapshot();
 $store3->stale = null;
 $expect('stale reads advance once', $playing($store3->read('state')), 's1');
 
-foreach ([$dir, $dir2, $dir3, $dirA] as $d) { array_map('unlink', glob("$d/{*,.htaccess}", GLOB_BRACE)); rmdir($d); }
+foreach ([$dir, $dir2, $dir3, $dirA, $dirL] as $d) { array_map('unlink', glob("$d/{*,.htaccess}", GLOB_BRACE)); rmdir($d); }
 echo $failures ? "$failures failure(s)\n" : "ok: rotation + 10 racing polls\n";
 exit($failures ? 1 : 0);

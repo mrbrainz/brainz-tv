@@ -159,6 +159,21 @@ window.BACKLOG_ARCHIVE = [
   "note": "2026-10-30: Queue gained pause/resume, skip, move, remove, approve, clear and a pending list; settings document overrides config (validated ranges). src/admin.php UI + ?api=admin-action (POST, CSRF). Tests: queue_test admin cases, curl run of every action, browser run of move/pause/settings, overlay cues paused video at its offset and resumes from it. Found YouTube error 150 on label videos that oEmbed passed: overlay now hides on error; follow-up B15."
  },
  {
+  "id": "B11",
+  "order": 11,
+  "phase": "A4",
+  "size": "S",
+  "status": "Done",
+  "depends": [
+   "B05"
+  ],
+  "read": [],
+  "title": "Abuse limits for submissions",
+  "description": "Without accounts: per-IP rate limit (e.g. one submission per N minutes, max M in queue at once), duplicate-in-queue rejection, recently-played cooldown, max video length if known, and a blocklist of video IDs/channels the admin can add to. Honeypot field against bots.",
+  "done_when": "Each limit returns a friendly message on the user view and is configurable; limit state is cleaned up automatically.",
+  "note": "2026-10-30: Listener adds now check blocklist (video ID / channel name), replay cooldown (history), per-IP submit cooldown (submits doc, pruned after 1h), duplicates (now/queue/pending) and per_user_limit by cookie or HMAC-hashed IP; honeypot field fakes success. New settings submit_cooldown_seconds/replay_cooldown_minutes; admin blocklist UI (block from queue/pending/history, block channel, unblock incl. unplayable). Admin sessions now end when the password changes. queue_test limit cases, curl run of each limit, browser run of blocklist. No max video length: oEmbed gives none. IP limits need the real client IP on Krystal (B13)."
+ },
+ {
   "id": "B15",
   "order": 15,
   "phase": "A2",

@@ -19,6 +19,12 @@ return [
     // Most queued videos one listener can have at once.
     'per_user_limit' => 2,
 
+    // Seconds a listener must wait between requests (0 = no wait).
+    'submit_cooldown_seconds' => 60,
+
+    // Minutes before a video that just played can be requested again (0 = any time).
+    'replay_cooldown_minutes' => 60,
+
     // Writable folder for the JSON data files. Keep it outside public/.
     'data_dir' => __DIR__ . '/data',
 ];

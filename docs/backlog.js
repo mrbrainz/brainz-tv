@@ -31,29 +31,16 @@ window.BACKLOG = {
   "B08",
   "B09",
   "B10",
+  "B11",
   "B15"
  ],
  "activities": [
-  {
-   "id": "B11",
-   "order": 11,
-   "phase": "A4",
-   "size": "S",
-   "status": "Ready",
-   "depends": [
-    "B05"
-   ],
-   "read": [],
-   "title": "Abuse limits for submissions",
-   "description": "Without accounts: per-IP rate limit (e.g. one submission per N minutes, max M in queue at once), duplicate-in-queue rejection, recently-played cooldown, max video length if known, and a blocklist of video IDs/channels the admin can add to. Honeypot field against bots.",
-   "done_when": "Each limit returns a friendly message on the user view and is configurable; limit state is cleaned up automatically."
-  },
   {
    "id": "B12",
    "order": 12,
    "phase": "A4",
    "size": "XS",
-   "status": "Backlog",
+   "status": "Ready",
    "depends": [
     "B01"
    ],
@@ -67,7 +54,7 @@ window.BACKLOG = {
    "order": 13,
    "phase": "A4",
    "size": "S",
-   "status": "Backlog",
+   "status": "Ready",
    "depends": [
     "B07",
     "B10"

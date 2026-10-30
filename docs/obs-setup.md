@@ -23,8 +23,9 @@ Live site: **https://tv.djbrainz.com**
 ## Add the overlay in OBS
 1. In your scene: **Sources → + → Browser**, name it e.g. "brainz-tv".
 2. **URL:** the overlay URL above. Add `&caption=0` to hide the title / "requested by" caption.
+   When the queue is empty it shows `assets/standby.gif` with "Add a video to the queue at tv.djbrainz.com"; add `&standby=0` to stay transparent instead. To change the GIF, replace `assets/standby.gif` and deploy.
 3. **Width / Height:** the size you want the video at, 16:9, e.g. `1280` × `720` (or `1920` × `1080` for full screen). Then drag/scale it into place in your layout.
-4. Leave **Custom CSS** as OBS's default; the overlay is already transparent when nothing is playing.
+4. Leave **Custom CSS** as OBS's default.
 5. Untick **Shutdown source when not visible**, so it keeps in sync when you switch scenes.
 6. Optional: tick **Refresh browser when scene becomes active** if you only show it in one scene.
 7. Tick **Control audio via OBS** (see Audio).

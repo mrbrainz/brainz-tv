@@ -10,6 +10,17 @@ if (!is_file($configPath)) {
 }
 $config = require $configPath;
 
+// Files from assets/, served through here because the live web root only holds a loader.
+if (isset($_GET['asset'])) {
+    $assets = ['standby.gif' => 'image/gif'];
+    $file = is_string($_GET['asset']) ? $_GET['asset'] : '';
+    if (!isset($assets[$file])) notFound();
+    header('Content-Type: ' . $assets[$file]);
+    header('Cache-Control: public, max-age=86400');
+    readfile("$root/assets/$file");
+    exit;
+}
+
 require "$root/src/Store.php";
 require "$root/src/Queue.php";
 require "$root/src/YouTube.php";

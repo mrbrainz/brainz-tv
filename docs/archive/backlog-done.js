@@ -253,5 +253,23 @@ window.BACKLOG_ARCHIVE = [
   "description": "User decision (B12): when a video ends before its rotation slot, loop it from the start instead of hiding the overlay. Rotation timing stays server-side; the overlay just replays on ENDED.",
   "done_when": "In the browser, a video shorter than the rotation time replays from the start until the server rotates to the next video.",
   "note": "2026-10-30: Overlay seeks to 0 and plays on ENDED (unless paused). Browser: 19s video in a 50s slot looped 18s -> 2s and kept the overlay visible."
+ },
+ {
+  "id": "B17",
+  "order": 17,
+  "phase": "A2",
+  "size": "S",
+  "status": "Done",
+  "depends": [
+   "B07"
+  ],
+  "read": [
+   "src/overlay.php",
+   "public/index.php"
+  ],
+  "title": "Standby screen when the queue is empty",
+  "description": "User request: when nothing is playing, the overlay shows assets/standby.gif with a message telling viewers to visit the site URL to add videos. The live web root only has the loader, so the GIF is served through index.php (?asset=, allowlisted, cached). &standby=0 keeps the old transparent idle state.",
+  "done_when": "With an empty queue the overlay shows the GIF and the site URL message; it switches to a video when one is queued and back to standby when the queue empties, locally and on tv.djbrainz.com.",
+  "note": "2026-10-30: ?asset= route (allowlist, 1-day cache, no cookies) serves assets/standby.gif; overlay shows it with an \"Add a video to the queue at <host>\" message whenever nothing is playing, &standby=0 opts out. Browser: standby on load, video after queueing, back to standby when empty."
  }
 ];

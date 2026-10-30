@@ -1,7 +1,10 @@
 <?php
 // OBS browser-source overlay. Fills the source (set its size in OBS), transparent when idle.
-// Optional: &caption=0 hides the title/requester caption.
+// Optional: &caption=0 hides the title/requester caption; &standby=0 stays transparent when idle
+// instead of showing the standby GIF and "add a video" message.
 $caption = ($_GET['caption'] ?? '1') !== '0';
+$standby = ($_GET['standby'] ?? '1') !== '0';
+$site = preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? ''));
 ?><!doctype html>
 <html lang="en">
 <head>
@@ -16,16 +19,27 @@ $caption = ($_GET['caption'] ?? '1') !== '0';
       background: rgba(0, 0, 0, .65); color: #fff; font: 600 clamp(14px, 2.2vw, 32px)/1.3 system-ui, sans-serif; }
     #caption small { display: block; font-weight: 400; opacity: .8; font-size: .7em; }
     #caption:empty { display: none; }
+    #standby { position: fixed; inset: 0; opacity: 0; transition: opacity .4s; }
+    #standby.on { opacity: 1; }
+    #standby img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    #standby p { position: absolute; left: 50%; bottom: 4vw; transform: translateX(-50%); margin: 0; width: max-content; max-width: 90%;
+      padding: .5em 1em; border-radius: .4em; background: rgba(0, 0, 0, .7); color: #fff; text-align: center;
+      font: 600 clamp(14px, 3vw, 44px)/1.3 system-ui, sans-serif; }
+    #standby b { color: #bf94ff; }
   </style>
 </head>
 <body>
   <div id="stage"><div id="player"></div><div id="caption"></div></div>
+<?php if ($standby): ?>
+  <div id="standby"><img src="?asset=standby.gif" alt=""><p>Add a video to the queue at <b><?= htmlspecialchars($site, ENT_QUOTES) ?></b></p></div>
+<?php endif; ?>
   <script>
   (() => {
     const token = <?= json_encode((string) $_GET['token']) ?>;
     const showCaption = <?= json_encode($caption) ?>;
     const stage = document.getElementById('stage'), caption = document.getElementById('caption');
-    let player = null, ready = false, current = null, paused = false;
+    const standby = document.getElementById('standby'); // absent with &standby=0
+    let player = null, ready = false, current, paused = false; // current starts undefined so the first poll always renders
 
     window.onYouTubeIframeAPIReady = () => {
       player = new YT.Player('player', {
@@ -46,6 +60,7 @@ $caption = ($_GET['caption'] ?? '1') !== '0';
 
     function show(now, paused) {
       current = now ? now.uid : null;
+      if (standby) standby.classList.toggle('on', !now);
       if (!now) {
         stage.classList.remove('on');
         player.stopVideo();

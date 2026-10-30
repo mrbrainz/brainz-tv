@@ -306,5 +306,23 @@ window.BACKLOG_ARCHIVE = [
   "description": "User request: define video IDs + titles in config.php (quick_videos) and push any of them to the queue with one click from the admin dashboard. Reuses the admin add action, so oEmbed still supplies the real title/thumbnail and unplayable videos are refused.",
   "done_when": "Videos listed in config.php appear as buttons in admin; one click queues that video; an empty or missing list hides the section.",
   "note": "2026-10-30: config quick_videos [{id, title}] rendered as Quick add buttons in src/admin.php (entries without id skipped, labels escaped); click reuses the admin add action. Browser: both buttons queued their video, empty list hides the section. Live config.php needs the key added by the user."
+ },
+ {
+  "id": "B20",
+  "order": 20,
+  "phase": "A1",
+  "size": "M",
+  "status": "Done",
+  "depends": [
+   "B05"
+  ],
+  "read": [
+   "public/index.php",
+   "src/YouTube.php"
+  ],
+  "title": "Search for videos on the listener page",
+  "description": "User request: a simple search so listeners don't need a YouTube link. User chose public Invidious instances (no API key). Server-side proxy ?api=search tries configured instances in order (invidious_instances), caches results 1h, rate-limits per hashed IP, and returns id/title/author/length with YouTube thumbnails. Picking a result submits the ID through the normal add checks. JS-only; the link field stays as the fallback.",
+  "done_when": "A listener can type a search, see results with thumbnails, and add one with a click; if every instance fails they get a clear message to paste a link instead; works on tv.djbrainz.com.",
+  "note": "2026-10-30: src/Search.php + ?api=search: tries invidious_instances in order (default yt.chocolatemoo53.com, invidious.materialio.us), drops non-video/live/upcoming, 12 results with YouTube thumbnails, 1h cache (max 200), 10 searches/min per hashed IP. Listener UI (JS only) adds a pick via the normal submit. tests/search_test.php (+ --live on both instances); browser at 375px: search then Add queued the video. Public instances are volunteer-run and may stop working."
  }
 ];

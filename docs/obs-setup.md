@@ -51,6 +51,9 @@ To test: add a video on the listener page; it appears in the overlay within abou
 - **⛔** blocks a video; the Blocklist section blocks channels and unblocks anything, including videos YouTube refused to play.
 - Short videos loop until their slot ends. Videos YouTube won't embed are skipped automatically.
 
+## Listener search
+Listeners can search for videos instead of pasting a link. Search goes through public Invidious servers (no YouTube API key), set in `config.php` as `invidious_instances` and tried in order. These volunteer-run servers come and go: if search says it "isn't working right now", pick working ones from https://api.invidious.io (they need the API enabled) and update the list. Pasting a link always works.
+
 ## Twitch
 - **Chat command** (Nightbot / StreamElements / Streamer.bot), e.g. `!tv`:
   > Queue a YouTube video for the stream: https://tv.djbrainz.com — paste a link, it plays in rotation on screen.

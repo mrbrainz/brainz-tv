@@ -25,6 +25,10 @@ return [
     // Minutes before a video that just played can be requested again (0 = any time).
     'replay_cooldown_minutes' => 60,
 
+    // Public Invidious instances used for listener search, tried in order (no YouTube API key needed).
+    // Instances come and go: if search stops working, swap in working ones from https://api.invidious.io
+    'invidious_instances' => ['https://yt.chocolatemoo53.com', 'https://invidious.materialio.us'],
+
     // One-click "Quick add" buttons on the admin page: video ID (or YouTube link) and button label.
     'quick_videos' => [
         // ['id' => 'dQw4w9WgXcQ', 'title' => 'Rick Astley - Never Gonna Give You Up'],

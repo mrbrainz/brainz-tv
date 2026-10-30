@@ -25,6 +25,7 @@ require "$root/src/Store.php";
 require "$root/src/Queue.php";
 require "$root/src/YouTube.php";
 require "$root/src/Auth.php";
+require "$root/src/Search.php";
 $store = new Store($config['data_dir']);
 
 // Settings the admin can change; saved values in the 'settings' document override config.php.
@@ -34,7 +35,7 @@ const SETTINGS = [
     'submit_cooldown_seconds' => [0, 3600], 'replay_cooldown_minutes' => [0, 1440],
 ];
 $config = array_merge(['submissions_open' => true, 'approval' => false, 'submit_cooldown_seconds' => 60,
-    'replay_cooldown_minutes' => 60], $config,
+    'replay_cooldown_minutes' => 60, 'invidious_instances' => ['https://yt.chocolatemoo53.com', 'https://invidious.materialio.us']], $config,
     array_intersect_key($store->read('settings'), SETTINGS));
 $queue = new Queue($store, $config);
 $auth = new Auth($store, $config['admin_password_hash'], $_SERVER['REMOTE_ADDR'] ?? '');
@@ -155,6 +156,10 @@ if ($api !== null) {
             }
             return ['error' => $queue->unplayable(is_string($_GET['uid'] ?? null) ? $_GET['uid'] : '')];
         },
+        'search' => function () use ($store, $config, $ipKey) {
+            $q = is_string($_GET['q'] ?? null) ? $_GET['q'] : '';
+            return (new Search($store, $config['invidious_instances']))->search($q, $ipKey);
+        },
         'queue' => function () use ($queue, $listener) {
             $state = $queue->snapshot();
             return Queue::forListener($state, $listener) + ['remaining' => $queue->remaining($state)];
@@ -262,6 +267,10 @@ $savedName = is_string($_COOKIE['name'] ?? null) ? mb_substr($_COOKIE['name'], 0
     .pos { font-weight: 700; min-width: 1.5rem; text-align: center; color: var(--muted); }
     .title { font-weight: 600; overflow-wrap: anywhere; }
     .meta, .empty { color: var(--muted); font-size: .875rem; }
+    .row { display: flex; gap: .5rem; flex-wrap: wrap; }
+    .results { margin: .75rem 0 0; }
+    .results .item { grid-template-columns: 96px 1fr auto; }
+    .results button { width: auto; padding: .4rem .8rem; }
   </style>
 </head>
 <body class="<?= $h($view) ?>">
@@ -270,6 +279,16 @@ $savedName = is_string($_COOKIE['name'] ?? null) ? mb_substr($_COOKIE['name'], 0
   <main>
     <h1>brainz-tv</h1>
     <?php if (!$config['submissions_open']): ?><p class="msg err">Requests are closed right now.</p><?php endif; ?>
+    <?php if ($config['submissions_open']): ?>
+    <section id="search-box" hidden>
+      <form id="search" class="row" role="search">
+        <input name="q" type="search" required minlength="2" maxlength="100" placeholder="Search for a video" autocomplete="off" style="flex:1 1 12rem">
+        <button style="width:auto">Search</button>
+      </form>
+      <ol id="results" class="results"></ol>
+      <p class="meta" style="margin:.75rem 0 .25rem">…or paste a YouTube link:</p>
+    </section>
+    <?php endif; ?>
     <form method="post" id="submit"<?= $config['submissions_open'] ? '' : ' hidden' ?>>
       <input name="name" maxlength="30" placeholder="Your name (optional)" value="<?= $h($savedName) ?>" autocomplete="nickname">
       <input name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px">
@@ -324,6 +343,35 @@ $savedName = is_string($_COOKIE['name'] ?? null) ? mb_substr($_COOKIE['name'], 0
       }
       button.disabled = false;
     });
+    // Search (JS only; the link field is the fallback). Picking a result submits it like a pasted link.
+    const searchBox = $('search-box');
+    if (searchBox) {
+      searchBox.hidden = false;
+      const mmss = s => s ? Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') : '';
+      $('search').addEventListener('submit', async e => {
+        e.preventDefault();
+        const button = e.target.querySelector('button'), list = $('results');
+        button.disabled = true;
+        list.innerHTML = '<li class="empty">Searching…</li>';
+        try {
+          const r = await (await fetch('?api=search&q=' + encodeURIComponent(e.target.q.value), {cache: 'no-store'})).json();
+          list.innerHTML = r.error ? `<li class="msg err">${esc(r.error)}</li>`
+            : r.results.length ? r.results.map(v => `<li class="item"><img src="${esc(v.thumbnail)}" alt="" loading="lazy"><div><div class="title">${esc(v.title)}</div><div class="meta">${esc(v.author)}${v.length ? ' · ' + mmss(v.length) : ''}</div></div><button data-pick="${esc(v.id)}">Add</button></li>`).join('')
+            : '<li class="empty">No videos found.</li>';
+        } catch {
+          list.innerHTML = '<li class="msg err">Search failed. Try again or paste a link.</li>';
+        }
+        button.disabled = false;
+      });
+      $('results').addEventListener('click', e => {
+        const b = e.target.closest('[data-pick]');
+        if (!b) return;
+        const form = $('submit');
+        form.video.value = 'https://www.youtube.com/watch?v=' + b.dataset.pick;
+        form.requestSubmit();
+        $('msg').scrollIntoView({block: 'nearest', behavior: 'smooth'});
+      });
+    }
     setInterval(() => document.hidden || refresh(), 10000);
   })();
   </script>

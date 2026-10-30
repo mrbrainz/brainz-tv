@@ -10,6 +10,10 @@ Live site: **https://tv.djbrainz.com**
    ```
    ssh -t krystal 'cd ~/sites/tv.djbrainz.com/brainz-tv && php tools/hash-password.php'
    ```
+   Krystal blocks the PHP function that hides typing, so the password shows as you type it. To keep it hidden, type it into your Mac's shell instead:
+   ```
+   read -rs PW && printf '%s\n' "$PW" | ssh krystal 'php ~/sites/tv.djbrainz.com/brainz-tv/tools/hash-password.php'; unset PW
+   ```
 2. **Overlay token.** Print it with:
    ```
    ssh krystal "php -r '\$c=require \"sites/tv.djbrainz.com/brainz-tv/config.php\"; echo \$c[\"overlay_token\"], PHP_EOL;'"

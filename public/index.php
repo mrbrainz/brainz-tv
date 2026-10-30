@@ -15,6 +15,14 @@ require "$root/src/Queue.php";
 require "$root/src/YouTube.php";
 require "$root/src/Auth.php";
 $store = new Store($config['data_dir']);
+
+// Settings the admin can change; saved values in the 'settings' document override config.php.
+const SETTINGS = [
+    'rotation_seconds' => [10, 3600], 'max_queue_length' => [1, 200], 'per_user_limit' => [1, 50],
+    'overlay_volume' => [0, 100], 'submissions_open' => 'bool', 'approval' => 'bool',
+];
+$config = array_merge(['submissions_open' => true, 'approval' => false], $config,
+    array_intersect_key($store->read('settings'), SETTINGS));
 $queue = new Queue($store, $config);
 $auth = new Auth($store, $config['admin_password_hash'], $_SERVER['REMOTE_ADDR'] ?? '');
 
@@ -24,6 +32,24 @@ function notFound(): never
 {
     http_response_code(404);
     exit('Not found');
+}
+
+// Validates and saves admin settings (only keys in SETTINGS). Null or an error message.
+function saveSettings(Store $store, array $input): ?string
+{
+    $clean = [];
+    foreach (array_intersect_key($input, SETTINGS) as $key => $value) {
+        $rule = SETTINGS[$key];
+        if ($rule === 'bool') {
+            if (!is_bool($value)) return "$key must be true or false.";
+            $clean[$key] = $value;
+        } else {
+            if (!is_int($value) || $value < $rule[0] || $value > $rule[1]) return "$key must be a whole number from $rule[0] to $rule[1].";
+            $clean[$key] = $value;
+        }
+    }
+    $store->update('settings', function (array &$settings) use ($clean) { $settings = $clean + $settings; });
+    return null;
 }
 
 function setCookieValue(string $name, string $value, int $ttl): void
@@ -53,7 +79,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $api === null && $view === 'user') 
     $error = $video['ok'] ? $queue->add($video, $name, $listener) : $video['error'];
     setCookieValue('name', $name, 31536000);
     $result = $error === null
-        ? ['ok' => true, 'message' => "Added “{$video['title']}” to the queue."]
+        ? ['ok' => true, 'message' => $config['approval']
+            ? "Sent “{$video['title']}” to the DJ for approval."
+            : "Added “{$video['title']}” to the queue."]
         : ['ok' => false, 'message' => $error];
     if ($wantsJson) {
         header('Content-Type: application/json');
@@ -99,8 +127,8 @@ if ($api !== null) {
             $now = $state['now'];
             return ['volume' => max(0, min(100, (int) $config['overlay_volume'])), 'now' => $now === null ? null : [
                 'uid' => $now['uid'], 'id' => $now['id'], 'title' => $now['title'], 'name' => $now['name'],
-                'offset' => max(0, time() - $now['started_at']), 'remaining' => $queue->remaining($state),
-            ]];
+                'offset' => max(0, ($state['paused_at'] ?? time()) - $now['started_at']), 'remaining' => $queue->remaining($state),
+            ], 'paused' => $state['paused_at'] !== null];
         },
         'queue' => function () use ($queue, $listener) {
             $state = $queue->snapshot();
@@ -108,7 +136,37 @@ if ($api !== null) {
         },
     ];
     // admin-* routes need a logged-in session, and a X-CSRF-Token header when they change things.
-    $routes['admin-state'] = fn() => $queue->snapshot() + ['remaining' => $queue->remaining($queue->snapshot())];
+    $routes['admin-state'] = function () use ($queue, $store, $config) {
+        $state = $queue->snapshot();
+        return $state + [
+            'remaining' => $queue->remaining($state),
+            'settings' => array_intersect_key($config, SETTINGS),
+            'history' => array_slice($store->read('history'), 0, 10),
+        ];
+    };
+    // POST JSON {action, uid?, by?, video?, name?, settings?} → {error: null|string}
+    $routes['admin-action'] = function () use ($queue, $store) {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') notFound();
+        $in = json_decode((string) file_get_contents('php://input'), true);
+        $in = is_array($in) ? $in : [];
+        $uid = is_string($in['uid'] ?? null) ? $in['uid'] : '';
+        return ['error' => match ($in['action'] ?? null) {
+            'skip' => $queue->skip(),
+            'pause' => $queue->pause(true),
+            'resume' => $queue->pause(false),
+            'clear' => $queue->clear(),
+            'remove' => $queue->remove($uid),
+            'approve' => $queue->approve($uid),
+            'move' => $queue->move($uid, is_int($in['by'] ?? null) ? $in['by'] : 0),
+            'add' => (function () use ($queue, $in) {
+                $video = (new YouTube())->check(is_string($in['video'] ?? null) ? $in['video'] : '');
+                $name = is_string($in['name'] ?? null) ? mb_substr(trim($in['name']), 0, 30) : '';
+                return $video['ok'] ? $queue->add($video, $name, 'admin', true) : $video['error'];
+            })(),
+            'settings' => saveSettings($store, is_array($in['settings'] ?? null) ? $in['settings'] : []),
+            default => 'Unknown action.',
+        }];
+    };
     if (is_string($api) && str_starts_with($api, 'admin-')) {
         $auth->startSession();
         if (!$auth->loggedIn() || ($_SERVER['REQUEST_METHOD'] !== 'GET' && !$auth->checkCsrf($_SERVER['HTTP_X_CSRF_TOKEN'] ?? null))) {
@@ -180,12 +238,14 @@ $savedName = is_string($_COOKIE['name'] ?? null) ? mb_substr($_COOKIE['name'], 0
     $state = Queue::forListener($queue->snapshot(), $listener); ?>
   <main>
     <h1>brainz-tv</h1>
-    <form method="post" id="submit">
+    <?php if (!$config['submissions_open']): ?><p class="msg err">Requests are closed right now.</p><?php endif; ?>
+    <form method="post" id="submit"<?= $config['submissions_open'] ? '' : ' hidden' ?>>
       <input name="name" maxlength="30" placeholder="Your name (optional)" value="<?= $h($savedName) ?>" autocomplete="nickname">
       <input name="video" required placeholder="YouTube link or video ID" autocomplete="off">
       <button>Add to queue</button>
     </form>
     <p class="msg <?= $flash ? ($flash['ok'] ? 'ok' : 'err') : '' ?>" id="msg" role="status"><?= $h($flash['message'] ?? '') ?></p>
+    <p class="meta" id="pending-note"><?= $state['my_pending'] ? $h("You have {$state['my_pending']} request(s) waiting for the DJ's approval.") : '' ?></p>
 
     <h2>Now playing</h2>
     <div id="now">
@@ -212,6 +272,7 @@ $savedName = is_string($_COOKIE['name'] ?? null) ? mb_substr($_COOKIE['name'], 0
     async function refresh() {
       try {
         const s = await (await fetch('?api=queue', {cache: 'no-store'})).json();
+        $('pending-note').textContent = s.my_pending ? `You have ${s.my_pending} request(s) waiting for the DJ's approval.` : '';
         $('now').innerHTML = s.now ? `<ol>${row(s.now, '▶')}</ol>` : '<p class="empty">Nothing playing.</p>';
         $('queue').innerHTML = s.queue.length ? `<ol>${s.queue.map((i, n) => row(i, n + 1)).join('')}</ol>` : '<p class="empty">The queue is empty. Add something!</p>';
       } catch {}
@@ -248,17 +309,7 @@ $savedName = is_string($_COOKIE['name'] ?? null) ? mb_substr($_COOKIE['name'], 0
     <?php endif; ?>
     <p class="msg err" role="status"><?= $h($flash['message'] ?? '') ?></p>
   </main>
-<?php else: ?>
-  <main>
-    <h1>brainz-tv admin</h1>
-    <p>Logged in.</p>
-    <form method="post">
-      <input type="hidden" name="action" value="logout">
-      <input type="hidden" name="csrf" value="<?= $h($auth->csrfToken()) ?>">
-      <button>Log out</button>
-    </form>
-    <p class="msg err" role="status"><?= $h($flash['message'] ?? '') ?></p>
-  </main>
+<?php else: require "$root/src/admin.php"; ?>
 <?php endif; ?>
 </body>
 </html>

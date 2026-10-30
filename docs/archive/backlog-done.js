@@ -140,5 +140,22 @@ window.BACKLOG_ARCHIVE = [
   "description": "?view=admin behind a password checked with password_verify against the hash in config.php; PHP session with regenerated ID, secure/httponly cookies, CSRF token on every admin POST, logout. Brute-force slow-down (delay/lockout per IP stored in the data dir).",
   "done_when": "Admin pages and admin API calls reject unauthenticated or CSRF-less requests; a helper command prints a hash for a new password.",
   "note": "2026-10-30: src/Auth.php (password_verify, btv_admin session only on admin routes, HttpOnly+SameSite=Strict, regenerate on login, CSRF), per-hashed-IP lockout after 5 fails (1,2,4.. min, max 1h). admin-* API guard (401/403) with admin-state route; tools/hash-password.php. tests/auth_test.php + curl run: anon 401, CSRF-less 403, session rotated, logout kills session, lockout. Uses REMOTE_ADDR: if Krystal sits behind a proxy/CDN all users may share one IP."
+ },
+ {
+  "id": "B10",
+  "order": 10,
+  "phase": "A3",
+  "size": "M",
+  "status": "Done",
+  "depends": [
+   "B05",
+   "B06",
+   "B09"
+  ],
+  "read": [],
+  "title": "Admin queue controls",
+  "description": "Admin view: see now-playing + queue, skip current, remove/reorder items, add a video directly, clear queue, pause/resume rotation, open/close submissions. Settings: rotation seconds, max queue length, per-user limit, overlay volume (0 = muted; config overlay_volume is the default). Optional approval mode: submissions wait in a pending list until approved.",
+  "done_when": "Every control changes what the overlay shows within one poll, and settings persist in the data dir across restarts.",
+  "note": "2026-10-30: Queue gained pause/resume, skip, move, remove, approve, clear and a pending list; settings document overrides config (validated ranges). src/admin.php UI + ?api=admin-action (POST, CSRF). Tests: queue_test admin cases, curl run of every action, browser run of move/pause/settings, overlay cues paused video at its offset and resumes from it. Found YouTube error 150 on label videos that oEmbed passed: overlay now hides on error; follow-up B15."
  }
 ];

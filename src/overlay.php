@@ -25,7 +25,7 @@ $caption = ($_GET['caption'] ?? '1') !== '0';
     const token = <?= json_encode((string) $_GET['token']) ?>;
     const showCaption = <?= json_encode($caption) ?>;
     const stage = document.getElementById('stage'), caption = document.getElementById('caption');
-    let player = null, ready = false, current = null;
+    let player = null, ready = false, current = null, paused = false;
 
     window.onYouTubeIframeAPIReady = () => {
       player = new YT.Player('player', {
@@ -34,11 +34,13 @@ $caption = ($_GET['caption'] ?? '1') !== '0';
           onReady: () => { ready = true; poll(); },
           // Video finished before its rotation slot ended: hide rather than show YouTube's end screen.
           onStateChange: e => { if (e.data === YT.PlayerState.ENDED) stage.classList.remove('on'); },
+          // Unplayable here (e.g. 150: owner blocks embedding, which oEmbed doesn't always reveal): stay transparent.
+          onError: () => stage.classList.remove('on'),
         },
       });
     };
 
-    function show(now) {
+    function show(now, paused) {
       current = now ? now.uid : null;
       if (!now) {
         stage.classList.remove('on');
@@ -46,7 +48,8 @@ $caption = ($_GET['caption'] ?? '1') !== '0';
         caption.textContent = '';
         return;
       }
-      player.loadVideoById({videoId: now.id, startSeconds: now.offset});
+      // When paused, cue (shows the video's poster, no playback) so resume starts at the right point.
+      player[paused ? 'cueVideoById' : 'loadVideoById']({videoId: now.id, startSeconds: now.offset});
       caption.textContent = '';
       if (showCaption) {
         caption.append(now.title);
@@ -63,9 +66,13 @@ $caption = ($_GET['caption'] ?? '1') !== '0';
     async function poll() {
       try {
         const r = await fetch('?api=overlay&token=' + encodeURIComponent(token), {cache: 'no-store'});
-        const {now, volume} = await r.json();
-        setVolume(volume);
-        if ((now ? now.uid : null) !== current) show(now);
+        const data = await r.json();
+        setVolume(data.volume);
+        const changed = (data.now ? data.now.uid : null) !== current;
+        if (changed) show(data.now, data.paused);
+        // Admin pause freezes the video; resume carries on from where it stopped.
+        else if (data.now && data.paused !== paused) data.paused ? player.pauseVideo() : player.playVideo();
+        paused = data.paused;
       } catch {}
     }
     setInterval(() => ready && poll(), 3000);

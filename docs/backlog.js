@@ -29,24 +29,26 @@ window.BACKLOG = {
   "B06",
   "B07",
   "B08",
-  "B09"
+  "B09",
+  "B10"
  ],
  "activities": [
   {
-   "id": "B10",
-   "order": 10,
-   "phase": "A3",
-   "size": "M",
+   "id": "B15",
+   "order": 15,
+   "phase": "A2",
+   "size": "S",
    "status": "Ready",
    "depends": [
-    "B05",
-    "B06",
-    "B09"
+    "B07"
    ],
-   "read": [],
-   "title": "Admin queue controls",
-   "description": "Admin view: see now-playing + queue, skip current, remove/reorder items, add a video directly, clear queue, pause/resume rotation, open/close submissions. Settings: rotation seconds, max queue length, per-user limit, overlay volume (0 = muted; config overlay_volume is the default). Optional approval mode: submissions wait in a pending list until approved.",
-   "done_when": "Every control changes what the overlay shows within one poll, and settings persist in the data dir across restarts."
+   "read": [
+    "src/overlay.php",
+    "src/YouTube.php"
+   ],
+   "title": "Skip videos YouTube won't play in the overlay",
+   "description": "oEmbed accepts some videos the player then refuses with error 150/101 (owner blocks embedding; seen locally for Rick Astley and PSY, which may be localhost-specific). Today the overlay just goes transparent for the rest of the slot. Have the overlay report the error (token-gated, current uid only) so the server skips to the next video and flags the video ID so it is rejected on future submissions. Re-check which videos fail once on the live domain (B13).",
+   "done_when": "An unembeddable video in the queue is skipped within a few seconds of the overlay hitting the error, and submitting it again is refused with a clear message."
   },
   {
    "id": "B11",

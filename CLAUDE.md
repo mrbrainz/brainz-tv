@@ -4,6 +4,7 @@ Lightweight single-page PHP app. No framework, no Composer, no build step.
 
 ## Layout
 - `public/index.php` — the whole app (entry point, docroot).
+- `src/admin.php` — admin dashboard (`?view=admin`), actions via `?api=admin-action`.
 - `src/overlay.php` — OBS overlay page (`?view=overlay&token=...`).
 - `src/Auth.php` — admin login, CSRF, login throttling. Hash: `php tools/hash-password.php`.
 - `src/Queue.php` — queue state (`now`, `queue`) on top of Store.
@@ -41,5 +42,5 @@ Lightweight single-page PHP app. No framework, no Composer, no build step.
 - Ticket `note`s: 1–3 sentences (what changed, how verified, limits). No narration.
 
 ## Status (max 3 lines; replace, never append)
-- Next: B10 admin controls, B11 abuse limits. Done: B02–B09.
+- Next: B11 abuse limits, B15 skip unplayable videos. Done: B02–B10.
 - Local setup: `cp config.example.php config.php`.

@@ -7,7 +7,7 @@ require __DIR__ . '/../src/Store.php';
 require __DIR__ . '/../src/Queue.php';
 
 $video = fn(string $id) => ['id' => $id, 'title' => $id, 'author' => '', 'thumbnail' => ''];
-$config = ['rotation_seconds' => 20, 'max_queue_length' => 20];
+$config = ['rotation_seconds' => 20, 'max_queue_length' => 20, 'submissions_open' => true, 'approval' => false];
 
 if (($argv[1] ?? '') === 'child') {
     time_sleep_until((float) $argv[3]); // start all children together
@@ -55,6 +55,52 @@ $expect('history ended_at', $history[0]['ended_at'], 5020);
 $q->add($video('d'), '', 'x');
 $expect('new item starts when idle', $playing($q->snapshot()), 'd');
 
+// Admin actions.
+$dirA = $tmp();
+$t = 1000;
+$storeA = new Store($dirA);
+$qa = new Queue($storeA, $config, function () use (&$t) { return $t; });
+$ids = fn() => array_column($qa->snapshot()['queue'], 'id');
+foreach (['a', 'b', 'c', 'd'] as $v) $qa->add($video($v), '', 'x');
+$expect('a playing', $playing($qa->snapshot()), 'a');
+$uid = fn(string $id) => array_column($qa->snapshot()['queue'], 'uid', 'id')[$id];
+$qa->move($uid('d'), -10);
+$expect('move to front', $ids(), ['d', 'b', 'c']);
+$qa->move($uid('d'), 1);
+$expect('move down one', $ids(), ['b', 'd', 'c']);
+$qa->remove($uid('d'));
+$expect('remove', $ids(), ['b', 'c']);
+$expect('remove missing', $qa->remove('nope') !== null, true);
+$t = 1005;
+$qa->pause(true);
+$t = 1100;
+$s = $qa->snapshot();
+$expect('paused: no advance, time frozen', [$playing($s), $qa->remaining($s)], ['a', 15]);
+$qa->pause(false);
+$s = $qa->snapshot();
+$expect('resumed with time left', [$playing($s), $qa->remaining($s)], ['a', 15]);
+$t = 1115;
+$expect('advances after resumed time', $playing($qa->snapshot()), 'b');
+$qa->skip();
+$expect('skip', [$playing($qa->snapshot()), $ids()], ['c', []]);
+$expect('history from skip', array_slice(array_column($storeA->read('history'), 'id'), 0, 2), ['b', 'a']);
+$qa->add($video('e'), '', 'x');
+$qa->clear();
+$expect('clear keeps now', [$playing($qa->snapshot()), $ids()], ['c', []]);
+$closed = new Queue($storeA, ['submissions_open' => false] + $config, fn() => $t);
+$expect('closed rejects listeners', $closed->add($video('f'), '', 'x') !== null, true);
+$expect('closed allows admin', $closed->add($video('f'), '', 'x', true), null);
+$appr = new Queue($storeA, ['approval' => true] + $config, fn() => $t);
+$appr->add($video('g'), '', 'listener');
+$s = $appr->snapshot();
+$expect('approval: goes to pending', [array_column($s['pending'], 'id'), $ids()], [['g'], ['f']]);
+$expect('listener sees own pending only', [Queue::forListener($s, 'listener')['my_pending'], Queue::forListener($s, 'other')['my_pending']], [1, 0]);
+$expect('pending hidden from listeners', array_key_exists('pending', Queue::forListener($s, 'listener')), false);
+$appr->approve($s['pending'][0]['uid']);
+$expect('approve', [$appr->snapshot()['pending'], $ids()], [[], ['f', 'g']]);
+$full = new Queue($storeA, ['max_queue_length' => 2] + $config, fn() => $t);
+$expect('full counts queue', $full->add($video('h'), '', 'x') !== null, true);
+
 // Parallel polls on an expired video: exactly one advance.
 $dir2 = $tmp();
 $store2 = new Store($dir2);
@@ -91,6 +137,6 @@ $q3->snapshot();
 $store3->stale = null;
 $expect('stale reads advance once', $playing($store3->read('state')), 's1');
 
-foreach ([$dir, $dir2, $dir3] as $d) { array_map('unlink', glob("$d/{*,.htaccess}", GLOB_BRACE)); rmdir($d); }
+foreach ([$dir, $dir2, $dir3, $dirA] as $d) { array_map('unlink', glob("$d/{*,.htaccess}", GLOB_BRACE)); rmdir($d); }
 echo $failures ? "$failures failure(s)\n" : "ok: rotation + 10 racing polls\n";
 exit($failures ? 1 : 0);

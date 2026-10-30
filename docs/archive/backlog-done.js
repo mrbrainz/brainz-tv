@@ -32,5 +32,22 @@ window.BACKLOG_ARCHIVE = [
   "description": "Keep one entry point (public/index.php) and switch on ?view=user|admin|overlay plus ?api=... for JSON endpoints. Add config.php outside public/ (admin password hash, rotation seconds, max queue length, per-user limits, data dir path) with a config.example.php committed and the real one gitignored. Data dir lives outside public/ so JSON files are never web-readable.",
   "done_when": "Each view renders a placeholder, unknown views return 404, config loads from outside the docroot, and config.example.php documents every setting.",
   "note": "2026-10-30: public/index.php routes ?view=user|admin|overlay (default user) and ?api= (empty route table for now); unknown or array-valued view/api return 404. config.php is loaded from the project root (outside public/), missing config returns 500 with a hint; config.example.php documents admin_password_hash, overlay_token, rotation_seconds, max_queue_length, per_user_limit, data_dir. config.php and data/ gitignored. Verified with php -S + curl on every route."
+ },
+ {
+  "id": "B03",
+  "order": 3,
+  "phase": "A1",
+  "size": "S",
+  "status": "Done",
+  "depends": [
+   "B02"
+  ],
+  "read": [
+   "CLAUDE.md"
+  ],
+  "title": "JSON file storage with locking",
+  "description": "No database: store state in data/state.json (queue, now-playing with start time, settings overrides) and data/history.json. One small store class reads/modifies/writes under flock(LOCK_EX), writes via temp file + rename so a crash never leaves half-written JSON, and creates files on first use.",
+  "done_when": "Concurrent submissions (e.g. 20 parallel curl POSTs) all land in the queue with none lost and the file is always valid JSON.",
+  "note": "2026-10-30: src/Store.php: read(name, default) under a shared lock, update(name, fn(&$data)) under an exclusive flock on <name>.lock, temp file + rename writes, corrupt JSON throws instead of being overwritten, document names restricted to [a-z0-9_-], data dir auto-created with a deny-all .htaccess. index.php creates $store from config data_dir. tests/store_test.php: 20 parallel processes, all updates kept (3/3 runs); the same test with locking removed loses 12 of 20, so it detects races. Document shapes (state/history) are left to B05/B06."
  }
 ];

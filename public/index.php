@@ -9,6 +9,9 @@ if (!is_file($configPath)) {
 }
 $config = require $configPath;
 
+require dirname(__DIR__) . '/src/Store.php';
+$store = new Store($config['data_dir']);
+
 $h = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES);
 
 function notFound(): never

@@ -22,25 +22,10 @@ window.BACKLOG = {
  ],
  "completed_ids": [
   "B01",
-  "B02"
+  "B02",
+  "B03"
  ],
  "activities": [
-  {
-   "id": "B03",
-   "order": 3,
-   "phase": "A1",
-   "size": "S",
-   "status": "Ready",
-   "depends": [
-    "B02"
-   ],
-   "read": [
-    "CLAUDE.md"
-   ],
-   "title": "JSON file storage with locking",
-   "description": "No database: store state in data/state.json (queue, now-playing with start time, settings overrides) and data/history.json. One small store class reads/modifies/writes under flock(LOCK_EX), writes via temp file + rename so a crash never leaves half-written JSON, and creates files on first use.",
-   "done_when": "Concurrent submissions (e.g. 20 parallel curl POSTs) all land in the queue with none lost and the file is always valid JSON."
-  },
   {
    "id": "B04",
    "order": 4,

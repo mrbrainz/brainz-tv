@@ -32,22 +32,25 @@ window.BACKLOG = {
   "B09",
   "B10",
   "B11",
+  "B12",
   "B15"
  ],
  "activities": [
   {
-   "id": "B12",
-   "order": 12,
-   "phase": "A4",
+   "id": "B16",
+   "order": 16,
+   "phase": "A2",
    "size": "XS",
    "status": "Ready",
    "depends": [
-    "B01"
+    "B07"
    ],
-   "read": [],
-   "title": "Confirm open product questions with the user",
-   "description": "Ask: default rotation time; should each video play to the end or be cut at the interval; is approval mode on by default; do listeners need a display name or Twitch username; any content rules; overlay size/position in the OBS layout. Update affected tickets with the answers.",
-   "done_when": "Answers are recorded in the relevant tickets' descriptions."
+   "read": [
+    "src/overlay.php"
+   ],
+   "title": "Loop short videos until their slot ends",
+   "description": "User decision (B12): when a video ends before its rotation slot, loop it from the start instead of hiding the overlay. Rotation timing stays server-side; the overlay just replays on ENDED.",
+   "done_when": "In the browser, a video shorter than the rotation time replays from the start until the server rotates to the next video."
   },
   {
    "id": "B13",

@@ -174,6 +174,21 @@ window.BACKLOG_ARCHIVE = [
   "note": "2026-10-30: Listener adds now check blocklist (video ID / channel name), replay cooldown (history), per-IP submit cooldown (submits doc, pruned after 1h), duplicates (now/queue/pending) and per_user_limit by cookie or HMAC-hashed IP; honeypot field fakes success. New settings submit_cooldown_seconds/replay_cooldown_minutes; admin blocklist UI (block from queue/pending/history, block channel, unblock incl. unplayable). Admin sessions now end when the password changes. queue_test limit cases, curl run of each limit, browser run of blocklist. No max video length: oEmbed gives none. IP limits need the real client IP on Krystal (B13)."
  },
  {
+  "id": "B12",
+  "order": 12,
+  "phase": "A4",
+  "size": "XS",
+  "status": "Done",
+  "depends": [
+   "B01"
+  ],
+  "read": [],
+  "title": "Confirm open product questions with the user",
+  "description": "Ask: default rotation time; should each video play to the end or be cut at the interval; is approval mode on by default; do listeners need a display name or Twitch username; any content rules; overlay size/position in the OBS layout. Update affected tickets with the answers.",
+  "done_when": "Answers are recorded in the relevant tickets' descriptions.",
+  "note": "2026-10-30: User answers: 3 min rotation default (unchanged); short videos should loop until their slot ends (new ticket B16); approval off by default (unchanged); listener name stays optional free text (unchanged). Content rules are handled by the admin blocklist (B11); overlay size/position is set on the OBS browser source, which the overlay fills."
+ },
+ {
   "id": "B15",
   "order": 15,
   "phase": "A2",

@@ -42,5 +42,5 @@ Lightweight single-page PHP app. No framework, no Composer, no build step.
 - Ticket `note`s: 1–3 sentences (what changed, how verified, limits). No narration.
 
 ## Status (max 3 lines; replace, never append)
-- Next: B12 open questions, B13 deploy to Krystal. Done: B02–B11, B15.
+- Next: B16 loop short videos, B13 deploy to Krystal. Done: B02–B12, B15.
 - Local setup: `cp config.example.php config.php`.
